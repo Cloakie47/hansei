@@ -188,6 +188,21 @@ def cmd_verdict(args):
     entry = propose.record_verdict(pid, verdict, reason, test=test)
     print(f"logged: {entry['id']} {entry['verdict']}"
           + (f" ({entry['reject_reason']})" if entry.get("reject_reason") else ""))
+    if verdict == "APPROVED" and not test:
+        mode = place.read_mode()
+        draft_path = f"logs/approved/{pid}.json"
+        print(f"\nNEXT STEP (MODE={mode}) — place the order:")
+        print(f"  1. python scripts/place.py prepare {draft_path} logs/balance-ctx.json")
+        print("  2. make the MCP call it prints "
+              + ("(tool_execute wrapping spot.orderTest — validation only)" if mode == "PAPER"
+                 else "(spot_newOrder — Binance will then ask YOU to confirm)"))
+        print(f"  3. python scripts/place.py record {draft_path} logs/balance-ctx.json <response.json>")
+    try:
+        import chart
+        chart.main()
+        print("dashboard/sync-rate.png refreshed")
+    except Exception as e:
+        print(f"(chart refresh skipped: {e})")
     return 0
 
 
@@ -339,6 +354,9 @@ def main(argv):
         return cmd_debrief(argv[2:])
     if cmd == "status":
         return cmd_status()
+    if cmd == "chart":
+        import chart
+        return chart.main()
     print(__doc__)
     return 1
 
