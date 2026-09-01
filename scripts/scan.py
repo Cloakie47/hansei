@@ -285,7 +285,10 @@ def classify_setup(row, b):
         return "PULLBACK", (f"uptrend (close>{sma20:.4g}, SMA20 rising), retraced "
                             f"{chg24:+.1f}% to within {SUPPORT_ZONE_PCT:.0f}% of the 20d mean")
     consol_high = row.get("consol_high")
-    if (consol_high and last > consol_high
+    # A breakout must be an UPWARD move: an asset down on the day that merely
+    # sits above an old consolidation is not breaking out (0G defect,
+    # 2026-09-02 — classified BREAKOUT while -13% on the day).
+    if (consol_high and last > consol_high and chg24 > 0
             and (b["vol_expand"] or 0) >= B_VOL_EXPAND):
         width_pct = (consol_high - row["consol_low"]) / last * 100
         return "BREAKOUT", (f"cleared the {width_pct:.1f}%-wide consolidation high "
@@ -380,6 +383,14 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "triggers": {"A": a_trig, "B": b["triggers"], "C": c["triggers"]},
             "setup": setup,
             "setup_detail": setup_detail,
+            "structure": {
+                "sma20": row.get("sma20"), "sma20_rising": row.get("sma20_rising"),
+                "chg_3d_pct": row.get("chg_3d_pct"), "chg_5d_pct": row.get("chg_5d_pct"),
+                "avg_abs_daily_pct": row.get("avg_abs_daily_pct"),
+                "consol_high": row.get("consol_high"), "consol_low": row.get("consol_low"),
+                "last": b["last"], "range_pos": b["range_pos"],
+                "vol_expand": b["vol_expand"], "body_ratio": b["body_ratio"],
+            },
             "rr": ({k: round(v, 6) for k, v in rr.items()} if rr else None),
             "regime": regime,
             "packet_worthy": (len(sources_triggering) >= 2
