@@ -37,6 +37,24 @@ PAPER_TOOL = "tool_execute"
 PAPER_WRAPPED = "spot.orderTest"
 LIVE_TOOL = "spot_newOrder"
 
+# The only tools this module may emit when MODE is not LIVE. Validation-only:
+# neither ever reaches the matching engine.
+PAPER_SAFE_TOOLS = {"spot.orderTest", "spot.sorOrderTest"}
+
+
+def assert_paper_safe(call):
+    """If MODE is not LIVE, the resolved tool must be a validation-only test
+    order. Anything else is a routing bug — raise and call nothing (R004)."""
+    if call["mode"] == "LIVE":
+        return
+    resolved = (call["arguments"].get("toolName")
+                if call["tool"] == "tool_execute" else call["tool"])
+    if resolved not in PAPER_SAFE_TOOLS:
+        raise RuntimeError(
+            f"MODE ROUTER BUG: mode={call['mode']} resolved to tool "
+            f"'{resolved}', which is not validation-only "
+            f"({sorted(PAPER_SAFE_TOOLS)}). Refusing to call anything.")
+
 
 def read_mode():
     """MODE from .env. Anything other than an explicit LIVE is PAPER."""
@@ -79,18 +97,21 @@ def build_call(proposal, mode):
     order_args = build_order_args(proposal)
     if mode == "PAPER":
         order_args["computeCommissionRates"] = True
-        return {
+        call = {
             "mode": mode,
             "tool": PAPER_TOOL,
             "wrapped_tool": PAPER_WRAPPED,
             "arguments": {"toolName": PAPER_WRAPPED, "arguments": order_args},
         }
-    return {
-        "mode": mode,
-        "tool": LIVE_TOOL,
-        "wrapped_tool": None,
-        "arguments": order_args,
-    }
+    else:
+        call = {
+            "mode": mode,
+            "tool": LIVE_TOOL,
+            "wrapped_tool": None,
+            "arguments": order_args,
+        }
+    assert_paper_safe(call)
+    return call
 
 
 def now_iso():
