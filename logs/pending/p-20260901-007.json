@@ -1,0 +1,65 @@
+{
+  "id": "p-20260901-007",
+  "draft": {
+    "symbol": "SOLUSDT",
+    "side": "BUY",
+    "type": "MARKET",
+    "quoteOrderQty": 8,
+    "confidence": 0.62,
+    "evidence": [
+      {
+        "source": "A",
+        "text": "ticker24hr all-pairs -> SOLUSDT 24h -5.61%, quote volume 237.4m USDT"
+      },
+      {
+        "source": "A",
+        "text": "volume vs own 7d avg -> 0.70x"
+      },
+      {
+        "source": "A",
+        "text": "last 98.57 vs day VWAP -> -3.65%"
+      },
+      {
+        "source": "B",
+        "text": "klines 1h x168 -> price at 23% of 7d range (94.95 - 110.6)"
+      },
+      {
+        "source": "B",
+        "text": "last 24h kline volume 0.75x prior 6d daily avg"
+      },
+      {
+        "source": "B",
+        "text": "current 1h candle body 5.62x avg of prior 24"
+      },
+      {
+        "source": "C",
+        "text": "depth ±1% of mid -> bids 6037k / asks 2557k USDT, imbalance 2.36"
+      },
+      {
+        "source": "C",
+        "text": "spread 1.0 bps"
+      }
+    ],
+    "signals_used": [
+      "spot_ticker24hr(all-pairs)",
+      "spot_klines",
+      "spot_depth"
+    ],
+    "thesis": "SOL flushed 5.6% to 23% of its 7-day range on a 5.6x-body capitulation candle while bids within 1% of mid outweigh asks 2.36x (6.0m vs 2.6m USDT) at a 1 bps spread, favouring mean reversion toward the range mid near 102.8.",
+    "invalidation": "A 1h close below 94.95 (the 7d low), or the bid imbalance within 1% of mid dropping below 1.0, kills the supported-flush read.",
+    "size_reasoning": "8 USDT = 20% of the 40 USDT balance, the R001 ceiling, above the 6 USDT floor. Stake derives from live balance via place.default_stake."
+  },
+  "rules_checked": [
+    "R001",
+    "R003",
+    "R004",
+    "R005",
+    "R006",
+    "R007",
+    "R008",
+    "R009",
+    "R010"
+  ],
+  "audit_passed": null,
+  "vetting_path": "N/A (top-20)"
+}

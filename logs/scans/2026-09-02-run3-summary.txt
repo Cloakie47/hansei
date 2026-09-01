@@ -1,0 +1,30 @@
+SCAN RUN 3 — 2026-09-02 (first scan with live affordability; balance 40 USDT)
+Raw JSON: logs/scans/2026-09-02-run3.json
+
+PAIRS PAST 20m VOLUME FLOOR: 23
+SCANNED DEEP: 8
+PACKET-WORTHY CANDIDATES: 6 (ENSO, DASH, ARB, PUMP, SOL, UNI; TRUMP and ZEC
+failed the two-source trigger bar)
+
+GATE OUTCOMES (all six run through build_packet with the live account):
+SUPPRESSED BY R009 (confidence < 60%): 4
+  ENSOUSDT 45% — dip against an ask-heavy (0.62) book with a 12 bps spread
+  DASHUSDT 52% — yesterday's bid imbalance faded 2.92 -> 1.17; weaker case
+  ARBUSDT  55% — post-spike chop, book neutral
+  PUMPUSDT 48% — near 7d low but volume contracting (0.60x), knife without signal
+SUPPRESSED BY R010 (duplicate-pending): 1
+  UNIUSDT 61% — p-20260901-005 still awaits a verdict (would also have passed R009)
+PACKETS PRODUCED: 1
+  SOLUSDT BUY 8 USDT at 62% -> p-20260901-007 (packets/p-20260901-007.txt)
+  Note: id is UTC-dated; UTC was still 2026-09-01 at generation.
+
+AFFORDABILITY: R001 line now shows a real check — "OK (8.00 of 40.00 USDT =
+20.0%)" — instead of SKIPPED. Stake derived from live balance (20% of 40 = 8,
+floor 6). All suppressions logged to logs/suppressed.jsonl per R009.
+
+DATA CAVEAT: spot_getAccount is serving a stale cached snapshot (USDT 0,
+updateTime frozen pre-deposit). Balance sourced from
+wallet_queryUserWalletBalance (quoteAsset=USDT): Spot wallet = 40 USDT,
+cross-checked against depositHistory (40 USDT, BSC, status success,
+walletType 0 = Spot). usdt_free() now reads both formats; the wallet-summary
+figure equals free USDT only while the wallet holds nothing but USDT.
