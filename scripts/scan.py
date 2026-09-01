@@ -41,7 +41,7 @@ STABLE_BASES = {"USDC", "FDUSD", "TUSD", "DAI", "EUR", "EURI", "AEUR", "USDP",
                 "XUSD", "USD1", "BFUSD", "PAXG"}
 
 VOLUME_FLOOR = 20_000_000   # 24h quote volume, USDT
-TOP_CANDIDATES = 8
+TOP_CANDIDATES = 12  # deep-scan cap; raised 8 -> 12 for throughput (2026-09-02)
 
 # Candidate thresholds (transparent, tunable; every trigger is reported)
 A_CHG_PCT = 4.0          # |24h change| worth attention
