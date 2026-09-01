@@ -25,3 +25,7 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   true, no active trading restrictions, and a listing age above a stated
   minimum. An asset that cannot be vetted by either path is DISCARDED, not
   exempted.
+- **R009** A draft with confidence below 60% is emitted as NO_PROPOSAL, not as
+  a packet. Every suppressed draft is logged to logs/suppressed.jsonl with its
+  symbol, side, confidence and evidence sources, so confidence clustering just
+  above the floor is visible.

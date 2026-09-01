@@ -46,8 +46,35 @@ RULEBOOK = ROOT / "rulebook.md"
 PROPOSALS_LOG = ROOT / "logs" / "proposals.jsonl"
 PENDING_DIR = ROOT / "logs" / "pending"
 PACKETS_DIR = ROOT / "packets"
+SUPPRESSED_LOG = ROOT / "logs" / "suppressed.jsonl"
 
-LOW_CONVICTION = 0.60  # below this, the packet carries a visible flag
+# R009 hard floor: below this a draft is suppressed to NO_PROPOSAL and logged.
+# The suppression log exists so confidence clustering just above the floor is
+# visible — a hard floor invites 61% nudging, and the log is how we catch it.
+CONFIDENCE_FLOOR = 0.60
+LOW_CONVICTION = CONFIDENCE_FLOOR  # packet flag threshold (for >=60% packets)
+
+
+def log_suppressed(rule, draft, reason):
+    place.append_jsonl(SUPPRESSED_LOG, {
+        "ts": place.now_iso(),
+        "rule": rule,
+        "symbol": draft.get("symbol"),
+        "side": draft.get("side"),
+        "confidence": draft.get("confidence"),
+        "evidence_sources": sorted(evidence_sources(draft)),
+        "reason": reason,
+    })
+
+
+def pending_clash(symbol, side):
+    """R010: the id of a PENDING packet with the same symbol+side, or None."""
+    if PENDING_DIR.exists():
+        for p in sorted(PENDING_DIR.glob("p-*.json")):
+            d = json.loads(p.read_text(encoding="utf-8")).get("draft", {})
+            if d.get("symbol") == symbol and d.get("side") == side:
+                return p.stem
+    return None
 
 VALID_VERDICTS = {"APPROVED", "REJECTED", "NO_PROPOSAL"}
 VALID_REJECT_CODES = {"SIZE", "TIMING", "CONVICTION", "RISK", "DUPLICATE", "ASSET", "OTHER"}
@@ -224,9 +251,26 @@ def _check_r007(draft, ctx):
                        f"non-counting tags: {ignored} — need 2 of A/B/C/D")
 
 
+def _check_r009(draft, ctx):
+    conf = draft.get("confidence")
+    if conf is None:
+        return "BLOCKED", "no confidence value on draft"
+    if conf < CONFIDENCE_FLOOR:
+        return "BLOCKED", f"confidence {conf:.0%} < 60% — must be suppressed to NO_PROPOSAL"
+    return "OK", f"confidence {conf:.0%} >= 60% floor"
+
+
+def _check_r010(draft, ctx):
+    clash = pending_clash(draft["symbol"], draft["side"])
+    if clash:
+        return "BLOCKED", f"{clash} already PENDING for this symbol+side"
+    return "OK", "no pending packet for this symbol+side"
+
+
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
             "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
-            "R007": _check_r007, "R008": _check_r008}
+            "R007": _check_r007, "R008": _check_r008, "R009": _check_r009,
+            "R010": _check_r010}
 
 
 def run_rule_checks(draft, rules, ctx):
@@ -302,6 +346,20 @@ def render_packet(pid, draft, checks):
 def build_packet(draft, market, account):
     """Returns (pid, packet_text, checks) or raises/blocks. BLOCKED rules
     print instead of a packet — caller decides exit."""
+    # R009 hard floor: suppress to NO_PROPOSAL, log for clustering visibility.
+    if draft.get("confidence") is not None and draft["confidence"] < CONFIDENCE_FLOOR:
+        reason = f"confidence {draft['confidence']:.0%} < 60% floor — suppressed to NO_PROPOSAL"
+        log_suppressed("R009", draft, reason)
+        return None, (f"NO PACKET (R009): {draft['symbol']} {draft['side']} {reason}. "
+                      f"Logged to logs/suppressed.jsonl. Emit the day-level NO_PROPOSAL "
+                      f"if nothing else clears the bar."), None
+    # R010: never stack a second packet on a symbol+side the Pilot hasn't decided.
+    clash = pending_clash(draft["symbol"], draft["side"])
+    if clash:
+        reason = f"duplicate-pending skip — {clash} already awaits a verdict"
+        log_suppressed("R010", draft, reason)
+        return None, (f"NO PACKET (R010): {draft['symbol']} {draft['side']} {reason}. "
+                      f"Logged to logs/suppressed.jsonl."), None
     rules = parse_active_rules()
     ctx = {
         "recent": recent_proposals(10),
