@@ -158,6 +158,41 @@ Deleted rules are struck through, not removed, so the history stays readable.
   from the Pilot's AI advisor — are NOT Pilot verdicts and must never be
   inferred as trading preferences.
 
+## Standing authority (granted by the Pilot, 2026-09-02)
+
+The Unit may make and implement optimization decisions autonomously, without
+asking first, WITHIN these limits:
+
+ALLOWED without asking:
+- Fixing correctness bugs (like the imbalance sign defect)
+- Tuning thresholds that do not weaken a rule: volume floor, deep-scan cap,
+  source trigger thresholds, scan cadence
+- Improving evidence quality, thesis wording, packet rendering, logging
+- Adding new READ-ONLY data sources from the MCP's 57 read tools
+- Refactoring, error handling, performance
+- Writing new bug reports for Binance
+- Anything that makes the loop easier for a tired human to run
+
+REQUIRES PILOT APPROVAL, always:
+- Any new rule, or any change to an existing rule in rulebook.md
+- Anything that LOOSENS a gate: lowering R009's 60% floor, weakening
+  R005/R006 contract checks, relaxing R008 vetting, disabling R010 or R011
+- Flipping MODE to LIVE
+- Publishing anything to Binance Square
+- Raising the stake above 20% of balance
+- Deleting or editing any existing log entry
+- Spending real funds in any way other than an approved packet
+
+NEVER, regardless:
+- Deciding a packet verdict. Verdicts are the Pilot's alone — Sync Rate
+  measures the agent learning the PILOT's judgment, and an agent-supplied
+  verdict would make the metric meaningless.
+- Manufacturing proposals to fill the chart. A quiet tape producing zero
+  packets is a correct output.
+
+Every autonomous change gets a one-line entry in
+logs/autonomous-changes.jsonl with what changed and why, so it is reviewable.
+
 ## Build order (do not skip ahead)
 
 1. [ ] MCP connected, sub-account funded, one manual trade confirmed end to end
