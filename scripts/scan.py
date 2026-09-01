@@ -157,12 +157,19 @@ def source_b(symbol):
 # ---------------------------------------------------------------------------
 # SOURCE C — order book
 
-def source_c(symbol):
+def source_c(symbol, side="BUY"):
+    """Order book — DIRECTIONAL. An imbalance only triggers, and only counts
+    as supporting evidence, when it aligns with the draft side: bid-heavy
+    supports a BUY, ask-heavy supports a SELL. A book leaning the other way
+    is tagged C-CONTRA — shown in the packet as contradicting context, never
+    counted by R007 as a supporting source. (Sign defect fixed 2026-09-02;
+    previously |imbalance| fired either way and a bearish book strengthened
+    BUY drafts — see logs/confidence-calibration-analysis.md.)"""
     depth = get("depth", symbol=symbol, limit=100)
     bids = [(float(p), float(q)) for p, q in depth["bids"]]
     asks = [(float(p), float(q)) for p, q in depth["asks"]]
     if not bids or not asks:
-        return {"evidence": [("C", f"depth -> empty book for {symbol}")], "triggers": []}
+        return {"evidence": [("C-CONTRA", f"depth -> empty book for {symbol}")], "triggers": []}
     best_bid, best_ask = bids[0][0], asks[0][0]
     mid = (best_bid + best_ask) / 2
     spread_bps = (best_ask - best_bid) / mid * 10_000
@@ -171,15 +178,20 @@ def source_c(symbol):
     ask_notional = sum(p * q for p, q in asks if p <= mid * (1 + band))
     imbalance = bid_notional / ask_notional if ask_notional else float("inf")
 
-    ev, triggers = [], []
-    ev.append(("C", f"depth ±1% of mid -> bids {bid_notional/1e3:.0f}k / asks "
-                    f"{ask_notional/1e3:.0f}k USDT, imbalance {imbalance:.2f}"))
-    ev.append(("C", f"spread {spread_bps:.1f} bps"))
-    if imbalance >= C_IMBALANCE or imbalance <= 1 / C_IMBALANCE:
+    aligned = (imbalance >= C_IMBALANCE) if side == "BUY" else (imbalance <= 1 / C_IMBALANCE)
+    contra = (imbalance <= 1 / C_IMBALANCE) if side == "BUY" else (imbalance >= C_IMBALANCE)
+    tag = "C" if not contra else "C-CONTRA"
+    imb_text = (f"depth ±1% of mid -> bids {bid_notional/1e3:.0f}k / asks "
+                f"{ask_notional/1e3:.0f}k USDT, imbalance {imbalance:.2f}")
+    if contra:
+        imb_text = f"contradicts {side}: {imb_text}"
+    ev = [(tag, imb_text), (tag, f"spread {spread_bps:.1f} bps")]
+    triggers = []
+    if aligned:
         triggers.append("imbalance")
     if spread_bps > C_MAX_SPREAD_BPS:
         triggers.append("wide-spread")  # a warning trigger, counts against
-    return {"spread_bps": spread_bps, "imbalance": imbalance,
+    return {"spread_bps": spread_bps, "imbalance": imbalance, "aligned": aligned,
             "evidence": ev, "triggers": triggers}
 
 
@@ -191,7 +203,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
     for row in rows[:top]:
         a_ev, a_trig = a_evidence(row)
         b = source_b(row["symbol"])
-        c = source_c(row["symbol"])
+        c = source_c(row["symbol"], side="BUY")  # spot: drafts open long only
         # A candidate is packet-worthy only when at least TWO structurally
         # different sources show an abnormal reading (R007 in spirit; the
         # hard check runs again in propose.py from the evidence tags).
