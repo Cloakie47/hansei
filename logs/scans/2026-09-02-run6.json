@@ -1,0 +1,799 @@
+{
+  "pairs_past_floor": 33,
+  "floor_usdt": 15000000,
+  "scanned_deep": 16,
+  "r011_bstocks_excluded": 68,
+  "r011_above_floor": [
+    "CRCLBUSDT",
+    "SNDKBUSDT",
+    "SPCXBUSDT"
+  ],
+  "candidates": [
+    {
+      "symbol": "0GUSDT",
+      "chg_pct": -10.087,
+      "triggers": {
+        "A": [
+          "vol",
+          "vwap"
+        ],
+        "B": [
+          "vol-expand"
+        ],
+        "C": [
+          "wide-spread"
+        ]
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> 0GUSDT 24h -10.09%, quote volume 18.5m USDT (own-volatility trigger threshold 12.0%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 4.24x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.197 vs day VWAP -> -13.76%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 42% of 7d range (0.1517 - 0.2592)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 4.13x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.18x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 58k / asks 54k USDT, imbalance 1.08"
+        },
+        {
+          "source": "C",
+          "text": "spread 10.2 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "ONGUSDT",
+      "chg_pct": 24.082,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [],
+        "C": [
+          "imbalance",
+          "wide-spread"
+        ]
+      },
+      "packet_worthy": false,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> ONGUSDT 24h +24.08%, quote volume 15.3m USDT (own-volatility trigger threshold 59.0%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 0.59x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.11382 vs day VWAP -> +4.17%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 15% of 7d range (0.088 - 0.26)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 0.60x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.06x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 24k / asks 10k USDT, imbalance 2.42"
+        },
+        {
+          "source": "C",
+          "text": "spread 13.2 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "FILUSDT",
+      "chg_pct": 16.888,
+      "triggers": {
+        "A": [
+          "chg",
+          "vol",
+          "vwap"
+        ],
+        "B": [
+          "range-edge",
+          "vol-expand",
+          "candle"
+        ],
+        "C": []
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> FILUSDT 24h +16.89%, quote volume 16.7m USDT (own-volatility trigger threshold 4.0%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 3.10x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.7939 vs day VWAP -> +7.77%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 98% of 7d range (0.6482 - 0.7985)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 3.25x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 5.09x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 76k / asks 101k USDT, imbalance 0.75"
+        },
+        {
+          "source": "C",
+          "text": "spread 1.3 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "CRVUSDT",
+      "chg_pct": 16.269,
+      "triggers": {
+        "A": [
+          "chg",
+          "vol",
+          "vwap"
+        ],
+        "B": [
+          "range-edge",
+          "vol-expand"
+        ],
+        "C": []
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> CRVUSDT 24h +16.27%, quote volume 19.5m USDT (own-volatility trigger threshold 8.0%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 6.33x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.3752 vs day VWAP -> +4.68%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 98% of 7d range (0.2901 - 0.377)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 7.19x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 1.69x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 90k / asks 94k USDT, imbalance 0.96"
+        },
+        {
+          "source": "C",
+          "text": "spread 2.7 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "ENSOUSDT",
+      "chg_pct": -4.944,
+      "triggers": {
+        "A": [
+          "chg",
+          "vol",
+          "vwap"
+        ],
+        "B": [
+          "vol-expand"
+        ],
+        "C": [
+          "wide-spread"
+        ]
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> ENSOUSDT 24h -4.94%, quote volume 79.3m USDT (own-volatility trigger threshold 4.6%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 4.05x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.846 vs day VWAP -> -6.04%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 37% of 7d range (0.783 - 0.952)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 3.52x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.11x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 45k / asks 44k USDT, imbalance 1.02"
+        },
+        {
+          "source": "C",
+          "text": "spread 11.8 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "ARBUSDT",
+      "chg_pct": 13.474,
+      "triggers": {
+        "A": [
+          "chg",
+          "vol",
+          "vwap"
+        ],
+        "B": [
+          "vol-expand"
+        ],
+        "C": []
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> ARBUSDT 24h +13.47%, quote volume 66.7m USDT (own-volatility trigger threshold 10.3%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 9.88x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.1078 vs day VWAP -> -2.23%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 67% of 7d range (0.0831 - 0.1202)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 13.71x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.70x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 118k / asks 84k USDT, imbalance 1.39"
+        },
+        {
+          "source": "C",
+          "text": "spread 9.3 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "HEMIUSDT",
+      "chg_pct": -8.669,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [],
+        "C": []
+      },
+      "packet_worthy": false,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> HEMIUSDT 24h -8.67%, quote volume 15.1m USDT (own-volatility trigger threshold 21.4%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 0.90x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.01496 vs day VWAP -> -4.58%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 77% of 7d range (0.0068 - 0.01761)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 0.81x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.98x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 36k / asks 37k USDT, imbalance 0.98"
+        },
+        {
+          "source": "C",
+          "text": "spread 6.6 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "OPUSDT",
+      "chg_pct": 9.637,
+      "triggers": {
+        "A": [
+          "chg",
+          "vol"
+        ],
+        "B": [
+          "vol-expand"
+        ],
+        "C": [
+          "wide-spread"
+        ]
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> OPUSDT 24h +9.64%, quote volume 18.1m USDT (own-volatility trigger threshold 6.7%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 6.04x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.0967 vs day VWAP -> +0.68%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 63% of 7d range (0.0848 - 0.1039)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 7.04x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.16x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 93k / asks 101k USDT, imbalance 0.92"
+        },
+        {
+          "source": "C",
+          "text": "spread 10.3 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "DASHUSDT",
+      "chg_pct": -4.294,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [
+          "vol-expand"
+        ],
+        "C": []
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> DASHUSDT 24h -4.29%, quote volume 18.0m USDT (own-volatility trigger threshold 7.3%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 1.51x"
+        },
+        {
+          "source": "A",
+          "text": "last 43.68 vs day VWAP -> -3.56%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 58% of 7d range (36.91 - 48.5)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 1.58x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.28x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 110k / asks 121k USDT, imbalance 0.90"
+        },
+        {
+          "source": "C",
+          "text": "spread 2.3 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "TRUMPUSDT",
+      "chg_pct": -5.326,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [],
+        "C": []
+      },
+      "packet_worthy": false,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> TRUMPUSDT 24h -5.33%, quote volume 21.5m USDT (own-volatility trigger threshold 11.7%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 0.37x"
+        },
+        {
+          "source": "A",
+          "text": "last 2.293 vs day VWAP -> -3.30%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 19% of 7d range (2.11 - 3.068)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 0.34x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.11x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 262k / asks 314k USDT, imbalance 0.83"
+        },
+        {
+          "source": "C",
+          "text": "spread 4.4 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "UNIUSDT",
+      "chg_pct": 8.58,
+      "triggers": {
+        "A": [
+          "chg",
+          "vol"
+        ],
+        "B": [
+          "vol-expand"
+        ],
+        "C": []
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> UNIUSDT 24h +8.58%, quote volume 78.9m USDT (own-volatility trigger threshold 7.6%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 2.49x"
+        },
+        {
+          "source": "A",
+          "text": "last 5.657 vs day VWAP -> +0.22%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 83% of 7d range (4.145 - 5.963)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 2.38x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.05x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 261k / asks 173k USDT, imbalance 1.50"
+        },
+        {
+          "source": "C",
+          "text": "spread 1.8 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "PUMPUSDT",
+      "chg_pct": -1.231,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [],
+        "C": []
+      },
+      "packet_worthy": false,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> PUMPUSDT 24h -1.23%, quote volume 23.6m USDT (own-volatility trigger threshold 9.3%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 0.60x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.004331 vs day VWAP -> -2.65%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 16% of 7d range (0.004181 - 0.005128)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 0.60x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.39x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 154k / asks 164k USDT, imbalance 0.94"
+        },
+        {
+          "source": "C",
+          "text": "spread 2.3 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "NEARUSDT",
+      "chg_pct": 2.195,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [
+          "vol-expand"
+        ],
+        "C": []
+      },
+      "packet_worthy": true,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> NEARUSDT 24h +2.19%, quote volume 46.1m USDT (own-volatility trigger threshold 5.6%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 1.77x"
+        },
+        {
+          "source": "A",
+          "text": "last 1.909 vs day VWAP -> -2.53%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 49% of 7d range (1.779 - 2.047)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 1.93x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.46x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 406k / asks 371k USDT, imbalance 1.10"
+        },
+        {
+          "source": "C",
+          "text": "spread 5.2 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "ZECUSDT",
+      "chg_pct": -3.734,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [],
+        "C": []
+      },
+      "packet_worthy": false,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> ZECUSDT 24h -3.73%, quote volume 138.0m USDT (own-volatility trigger threshold 5.3%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 0.85x"
+        },
+        {
+          "source": "A",
+          "text": "last 829.4 vs day VWAP -> -2.21%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 57% of 7d range (751.53 - 888.37)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 0.86x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.17x avg of prior 24"
+        },
+        {
+          "source": "C-CONTRA",
+          "text": "contradicts BUY: depth ±1% of mid -> bids 183k / asks 315k USDT, imbalance 0.58"
+        },
+        {
+          "source": "C-CONTRA",
+          "text": "spread 0.1 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "SOLUSDT",
+      "chg_pct": -3.917,
+      "triggers": {
+        "A": [
+          "vwap"
+        ],
+        "B": [],
+        "C": []
+      },
+      "packet_worthy": false,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> SOLUSDT 24h -3.92%, quote volume 245.1m USDT (own-volatility trigger threshold 5.9%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 0.73x"
+        },
+        {
+          "source": "A",
+          "text": "last 99.83 vs day VWAP -> -2.21%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 31% of 7d range (94.95 - 110.6)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 0.77x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.72x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 3516k / asks 2933k USDT, imbalance 1.20"
+        },
+        {
+          "source": "C",
+          "text": "spread 1.0 bps"
+        }
+      ]
+    },
+    {
+      "symbol": "ENAUSDT",
+      "chg_pct": 5.489,
+      "triggers": {
+        "A": [],
+        "B": [],
+        "C": []
+      },
+      "packet_worthy": false,
+      "evidence": [
+        {
+          "source": "A",
+          "text": "ticker24hr all-pairs -> ENAUSDT 24h +5.49%, quote volume 51.2m USDT (own-volatility trigger threshold 9.0%)"
+        },
+        {
+          "source": "A",
+          "text": "volume vs own 7d avg -> 0.87x"
+        },
+        {
+          "source": "A",
+          "text": "last 0.1576 vs day VWAP -> +0.08%"
+        },
+        {
+          "source": "B",
+          "text": "klines 1h x168 -> price at 41% of 7d range (0.1349 - 0.1899)"
+        },
+        {
+          "source": "B",
+          "text": "last 24h kline volume 0.81x prior 6d daily avg"
+        },
+        {
+          "source": "B",
+          "text": "current 1h candle body 0.10x avg of prior 24"
+        },
+        {
+          "source": "C",
+          "text": "depth ±1% of mid -> bids 461k / asks 327k USDT, imbalance 1.41"
+        },
+        {
+          "source": "C",
+          "text": "spread 6.3 bps"
+        }
+      ]
+    }
+  ],
+  "packet_worthy": [
+    "0GUSDT",
+    "FILUSDT",
+    "CRVUSDT",
+    "ENSOUSDT",
+    "ARBUSDT",
+    "OPUSDT",
+    "DASHUSDT",
+    "UNIUSDT",
+    "NEARUSDT"
+  ]
+}
