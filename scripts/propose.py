@@ -443,7 +443,8 @@ def generate_packet(invoke, draft):
     return pid, text, checks
 
 
-def record_verdict(pid, verdict, reason_code=None, note=None, test=False):
+def record_verdict(pid, verdict, reason_code=None, note=None, test=False,
+                   spec_superseded=False):
     """Append the Pilot's verdict to logs/proposals.jsonl per the CLAUDE.md
     schema. Refuses invalid verdicts and reject codes outside the fixed list."""
     if verdict not in VALID_VERDICTS:
@@ -480,6 +481,13 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False):
     }
     if test:
         entry["test"] = True
+    if spec_superseded:
+        # administrative rejection of an outdated packet spec: counts in Sync
+        # Rate (it was decided), but is EXCLUDED from bias analysis and from
+        # any Step-4 inference about Pilot preference (Pilot-directed
+        # 2026-09-02) — admin rejections must never be learned as
+        # "the Pilot rejects BUY proposals".
+        entry["spec_superseded"] = True
     place.append_jsonl(PROPOSALS_LOG, entry)
     if verdict == "APPROVED":
         # keep the draft for the placement step (place.py prepare needs it)

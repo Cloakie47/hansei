@@ -387,9 +387,12 @@ def cmd_debrief(args):
         suppressed = [json.loads(l) for l in sup_log.read_text(encoding="utf-8").splitlines()
                       if l.strip()]
         suppressed = [s for s in suppressed if s.get("test") is not True and s["ts"][:10] == date]
-    confid = [p["confidence"] for p in day if p.get("confidence") is not None]
-    buys = [p for p in day if p.get("side") == "BUY"]
-    directional = [p for p in day if p.get("side")]
+    # spec-superseded rejections count in Sync Rate but are excluded from
+    # bias analysis and Pilot-preference inference (Pilot-directed).
+    inferable = [p for p in day if not p.get("spec_superseded")]
+    confid = [p["confidence"] for p in inferable if p.get("confidence") is not None]
+    buys = [p for p in inferable if p.get("side") == "BUY"]
+    directional = [p for p in inferable if p.get("side")]
 
     def rate(a, d):
         return f"{100*len(a)/len(d):.0f}% ({len(a)} of {len(d)})" if d else "n/a (0 decided)"
@@ -425,8 +428,10 @@ def cmd_debrief(args):
         "- Remaining bias checks: [UNIT ANALYSIS REQUIRED or insufficient data]",
         "",
         "## Step 4 — Learning from the Pilot",
-        "Only Pilot-logged verdicts count (see CLAUDE.md). "
-        f"Pilot verdicts today: {len(approved) + len(rejected)}."
+        "Only Pilot-logged verdicts count (see CLAUDE.md); spec-superseded "
+        "rejections are excluded from preference inference. "
+        f"Inferable Pilot verdicts today: "
+        f"{sum(1 for p in inferable if p.get('verdict') in ('APPROVED', 'REJECTED'))}."
         " [UNIT ANALYSIS REQUIRED if > 0; otherwise insufficient Pilot signal]",
         "",
         "## Step 5 — Rulebook diff  [UNIT PROPOSES, PILOT APPROVES — max 2 add, 1 strike]",
