@@ -116,6 +116,32 @@ may itself take most of the week to reach; (b) the Sync Rate curve will be
 sparse and must keep printing its denominators; (c) the cap raise to 12
 helped candidate coverage but cannot create confluence that is not there.
 
+## Confounding check (2026-09-02, after v2 approval)
+
+Scan 6's ten two-source candidates re-scored under v2, split by pool
+settings (assumption: excursion ranking preserved, old cap 12 covered all
+high-excursion names in the 20m pool):
+
+  Clear 60% under v2, NEW pool (15m floor, cap 16): 10 of 10
+    CRV .662, FIL .638, UNI .637, ARB .633, OP .624, DASH .618,
+    ONG .613, NEAR .613, 0G .612, ENSO .610
+  Clear 60% under v2, OLD pool (20m floor, cap 12): 4 of 10
+    UNI, ARB, NEAR, ENSO
+
+So the answer to "v2 scores better vs the pool got wider": BOTH, roughly
+40/60 — 4 packets would exist tonight from v2 alone on the old pool; 6 more
+come from the widened universe.
+
+FLAGGED HONESTLY, because the suppression log was built to catch exactly
+this: under v2 with a base of 62, EVERY two-source candidate with a neutral
+book and normal spread clears the floor — eight of ten scores sit in the
+0.610-0.638 band, i.e. clustering just above 60%. The floor still catches
+contra-book/wide-spread drafts (verified: such a draft scores 0.562), but
+for ordinary two-source candidates R009 is now nearly non-binding. If the
+Pilot wants the floor to keep real teeth at two sources, the lever is a
+tier-dependent base (e.g. 0.58 for two-source) — that is a gate-relevant
+change and NEEDS APPROVAL; not implemented.
+
 ## Decision record (2026-09-02, Pilot)
 
 - The imbalance sign defect is FIXED in scan.py: source C is directional,
