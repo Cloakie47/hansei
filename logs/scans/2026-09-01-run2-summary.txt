@@ -1,0 +1,39 @@
+SCAN RUN 2 — 2026-09-01 evening (raw JSON: 2026-09-01-run2.json, run1 alongside)
+
+PAIRS PAST 20m FLOOR: 24 (unchanged from run 1)
+SCANNED DEEP: 8
+CANDIDATE OVERLAP WITH RUN 1: 8 of 8 (100% — identical symbol set)
+PACKET-WORTHY: 8 (run 1: 5). Overlap 5 of 8; newly worthy tonight: ENAUSDT,
+PUMPUSDT, TRUMPUSDT (each crossed the two-source trigger bar since run 1).
+
+R003 DUPLICATE BLOCKS TONIGHT: 0.
+Reason: R003 only fires on a REJECTED verdict for the same symbol+side within
+24h. Nothing has been rejected yet — UNIUSDT and DASHUSDT are PENDING, and
+pending packets are invisible to R003. If re-drafted tonight, UNI returns:
+  ('OK', 'no rejected proposal for this symbol+side in last 24h')
+
+R003 MECHANICS (verbatim behavior of _check_r003 in scripts/propose.py):
+- Scans the last 10 non-test proposals for verdict REJECTED, same symbol AND
+  same side, timestamp within 24h.
+- If none: OK.
+- If found AND the draft carries a "material_change" field: OK, and the packet
+  records what changed.
+- If found and no material_change: BLOCKED.
+
+SO: R003 is NOT an unconditional 24h block — the material-change escape hatch
+exists in code. BUT the code cannot DETECT materiality; it only checks whether
+the Unit supplied a material_change string and passes it through for the Pilot
+to judge. Detection is the Unit's job, enforcement of honesty is the Pilot's.
+
+GAP SURFACED BY THIS RUN (no rule governs it, not changing anything without
+Pilot approval): nothing prevents generating a second packet for a symbol
+whose first packet is still PENDING. With 3-4 scans/day and ~100% candidate
+overlap between runs, the practical duplicate risk is pending-duplicates, not
+rejected-duplicates. Expect scans 2-4 of a day to mostly re-surface the same
+names; genuinely new packet-worthy names appeared at a rate of 3 per scan
+interval today, but two of those three (PUMP, TRUMP) are marginal
+single-excursion triggers, not fresh ideas.
+
+PROJECTION FOR 3-4 SCANS/DAY: roughly 1-3 genuinely new candidates per day;
+the rest duplicates. Without a pending-dedupe convention, later scans would
+re-propose names already on the Pilot's desk.
