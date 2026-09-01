@@ -1,0 +1,24 @@
+{"ts": "2026-09-01T16:57:53Z","ticker": "APPLE","contract": "0xe3bbffbc3294fd37663ac0bd82e9171fc16b7777","chainId": "56","reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:57:54Z","ticker": "CARE","contract": "0xabed98e3aa42b5ab79cce9e7ebb274688ba2ffff","chainId": "56","reason": "CAREUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:57:54Z","ticker": "1BNB","contract": "0x683f66f2e78b64fe5816b2692151c41c91677777","chainId": "56","reason": "1BNBUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:57:54Z","ticker": "REB","contract": "0x5b9af14a53a2ad608b378f9bc7efa7d521647777","chainId": "56","reason": "REBUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:10Z","ticker": "APPLE","contract": "0xe3bbffbc3294fd37663ac0bd82e9171fc16b7777","chainId": "56","reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:11Z","ticker": "CARE","contract": "0xabed98e3aa42b5ab79cce9e7ebb274688ba2ffff","chainId": "56","reason": "CAREUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:11Z","ticker": "1BNB","contract": "0x683f66f2e78b64fe5816b2692151c41c91677777","chainId": "56","reason": "1BNBUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:11Z","ticker": "REB","contract": "0x5b9af14a53a2ad608b378f9bc7efa7d521647777","chainId": "56","reason": "REBUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:11Z","ticker": "彩礼币","contract": "0xeb9e768c42d6f5b08d34980c6f721494372a7777","chainId": "56","reason": "ticker '彩礼币' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:58:12Z","ticker": "FLORK","contract": "0xf40592daacb3e5abf358789f5688c0b4f64d7777","chainId": "56","reason": "FLORKUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:12Z","ticker": "VENUSCOIN","contract": "0x69b7f6f2f7f7dae3bc70e5f15802dd34e4b57777","chainId": "56","reason": "VENUSCOINUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:12Z","ticker": "VENUSCOIN","contract": "0xb6b6083965fdec35ee0a3eedbe219db32da87777","chainId": "56","reason": "VENUSCOINUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:13Z","ticker": "AST","contract": "0x265b3982ea730748100947f52561a4eab54affff","chainId": "56","reason": "ASTUSDT status is BREAK, not TRADING"}
+{"ts": "2026-09-01T16:58:13Z","ticker": "DICKBUTT","contract": "0x45a2114cb509832ae343efe01cbeb0cb1a167777","chainId": "56","reason": "DICKBUTTUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:13Z","ticker": "MARSCOIN","contract": "0xfe189e97832da1573e4e4ff034f4ffc3a15c7777","chainId": "56","reason": "MARSCOINUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:13Z","ticker": "致胡锡进老师","contract": "0xc756bbba4a73ec2f87ac1ca37080227b63c17777","chainId": "56","reason": "ticker '致胡锡进老师' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:58:13Z","ticker": "东方天书","contract": "0x03cd0f77e62dafeda5ae58e2256490041f5e7777","chainId": "56","reason": "ticker '东方天书' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:58:14Z","ticker": "RESULT","contract": "0x0d56d578ba71a4d0c64bb61bb8bfeb51dc57ffff","chainId": "56","reason": "RESULTUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:14Z","ticker": "COPPERBULL","contract": "0xe334c22aa5c12041bb6ef8b8a675261d12107777","chainId": "56","reason": "COPPERBULLUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:15Z","ticker": "SLOPTV","contract": "0xbee481365dcae7bed65d2b54bebafb93fec07777","chainId": "56","reason": "SLOPTVUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:15Z","ticker": "RATRACE","contract": "0xb945f5b5be2b35bed8ea51648fea74e56c687777","chainId": "56","reason": "RATRACEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:15Z","ticker": "MONKEY","contract": "0x684a1768c8d0098811017b7812c23978dd58c276","chainId": "56","reason": "MONKEYUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:16Z","ticker": "BLORK","contract": "0x25f954c87172864b7d106fba3e3e17f5d9ce7777","chainId": "56","reason": "BLORKUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:58:16Z","ticker": "奶蛙","contract": "0x650532b8596375f60c62b00e20377a1c9ebf7777","chainId": "56","reason": "ticker '奶蛙' is not a valid Binance spot symbol (non-alphanumeric)"}

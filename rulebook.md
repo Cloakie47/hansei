@@ -8,3 +8,5 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
 - **R004** Any restriction on a tool must also cover tool_execute invoked with
   that tool name as an argument. The visible tool list understates the write
   surface.
+- **R005** Only propose assets that exist as an active Binance spot USDT pair.
+  Signals for non-listed assets are discarded at ingest.
