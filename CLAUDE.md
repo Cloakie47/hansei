@@ -55,14 +55,18 @@ MCP endpoint (already added, do not re-add, do not paste into chat):
 claude mcp add binance-mcp-server --transport http https://agent.binance.com/mcp/agentic
 ```
 
-Skills in use (install with `npx skills add <url>`):
+Skills (install with `npx skills add <url>`; status as of 2026-09-02):
 
-- `binance-trading-signal` — smart money signals, backtests, daily/monthly reports
-- `binance-leaderboard` — 6-dimension scoring (winrate/stability/drawdown/pnl)
-- `query-token-audit` — scam and honeypot check before any proposal
-- `crypto-market-rank` — sentiment, hype, smart-money inflow rankings
-- `square-post` — publish the nightly Debrief to Binance Square
-- `binance-agentic-wallet` — optional, x402 buyer-side payments (stretch goal only)
+- `binance-trading-signal` — INSTALLED; smart-money mode works (public API),
+  strategy mode needs the baw wallet CLI (not set up, stretch only)
+- `query-token-audit` — INSTALLED; strict fail-loud parser in scripts/audit.py
+- `crypto-market-rank` — INSTALLED; all seven feeds tested (on-chain universe,
+  demoted to optional context by R005-R007)
+- `square-post` — INSTALLED; posting blocked on a Square OpenAPI key
+- `binance-leaderboard` — NOT installed (no proven use yet)
+- `binance-agentic-wallet` — NOT installed; x402 stretch goal only
+- Note: on Windows the skill CLIs need scripts/skillcall.mjs
+  (docs/bug-report-windows-cli.md)
 
 ## Operational constraints (verified 2026-09-01)
 
@@ -93,18 +97,33 @@ Skills in use (install with `npx skills add <url>`):
 ```
 hansei/
   CLAUDE.md              <- this file
+  README.md              <- judge-facing summary
   rulebook.md            <- lessons learned, injected into every decision packet
   prompts/
     decision-packet.md   <- how the Unit proposes a trade
     nightly-debrief.md   <- how the Unit reviews its own day
   logs/
-    proposals.jsonl      <- every proposal, approved or rejected
+    proposals.jsonl      <- every decided proposal (append-only)
     fills.jsonl          <- what actually executed
+    suppressed.jsonl     <- R009/R010 pre-packet suppressions
+    signals_discarded.jsonl <- R005/R006/R011 ingest discards
+    tool_execute.jsonl   <- every tool_execute call (R004)
+    autonomous-changes.jsonl <- one line per autonomous change
+    scan-history.jsonl   <- per-scan throughput
+    pending/ approved/   <- packets awaiting verdict / approved drafts
+    scans/               <- raw scan results + summaries
+    replay/              <- drill range: sessions, packets, decisions (never
+                            mixed into live metrics)
+  packets/               <- every rendered packet, verbatim (the artifact)
   debriefs/
     YYYY-MM-DD.md        <- one Debrief per day
     YYYY-MM-DD-square.md <- the short public version
-  dashboard/             <- sync rate chart + rulebook growth
+  dashboard/             <- sync-rate.png (scripts/chart.py)
+  docs/                  <- bug reports, pre-flight, optimization notes
   scripts/
+    run.py               <- the loop: scan/pending/verdict/debrief/status/chart
+    scan.py propose.py place.py audit.py ingest.py chart.py replay.py
+    skillcall.mjs        <- Windows-safe runner for skill CLIs
 ```
 
 ## Data schemas — never change these once logging starts
@@ -195,13 +214,15 @@ logs/autonomous-changes.jsonl with what changed and why, so it is reviewable.
 
 ## Build order (do not skip ahead)
 
-1. [ ] MCP connected, sub-account funded, one manual trade confirmed end to end
-2. [ ] Decision packet generation + proposal logging
-3. [ ] Approve/reject capture with reason codes
-4. [ ] Nightly Debrief + rulebook updates
-5. [ ] Square post publishing
-6. [ ] Sync Rate chart + dashboard
-7. [ ] Replay mode over historical data (dates hidden, symbols anonymised)
+1. [~] MCP connected + smoke-tested, 40 USDT funded; first live trade awaits
+       a Pilot approval + MODE flip
+2. [x] Decision packet generation + proposal logging
+3. [x] Approve/reject capture with reason codes
+4. [~] Nightly Debrief runs (first: debriefs/2026-09-01.md); rulebook diffs
+       proposed through the Pilot
+5. [ ] Square post publishing — blocked on a Square OpenAPI key (dry run done)
+6. [x] Sync Rate chart + dashboard (scripts/chart.py)
+7. [x] Replay mode v1 (scripts/replay.py — anonymised, outcome reveal)
 8. [ ] Stretch: x402 paywall on the full Debrief (Base, USDC) — cut if behind
 
 ## What we claim, and what we don't

@@ -14,9 +14,13 @@ approves or rejects everything.
    rejected in the last 24 hours unless something material has changed — and if it
    has, say what changed.
 3. Pull current market data via the Binance MCP server.
-4. Pull at least one independent signal (`binance-trading-signal`,
-   `crypto-market-rank`, or `binance-wallet-tracker`).
-5. Run `query-token-audit` unless the asset is a top-20 pair.
+4. Evidence must draw on at least two structurally independent sources —
+   cross-sectional (A), time series (B), order book (C), report (D) — per
+   R007. On-chain signals (`binance-trading-signal`, `crypto-market-rank`)
+   are optional context only and never count toward the two (R005/R006
+   gate them at ingest).
+5. Vet any non-top-20 asset per R008: query-token-audit for contract
+   assets, listing-data for native coins. Unvettable = discarded.
 6. Check the Agentic sub-account balance. Never propose more than 20% of it in a
    single position.
 
@@ -42,9 +46,10 @@ EVIDENCE
   • Token audit: PASS / FAIL / N/A (top-20)
 
 RULES CHECKED
-  R003 max 20% of balance per position ......... OK (25 of 200 = 12.5%)
-  R007 no entries within 2h of a rejected idea .. OK
-  R011 skip assets with <$5m 24h volume ........ OK
+  R001 max 20% of balance per position ......... OK (8.00 of 40.00 = 20.0%)
+  R007 two independent evidence sources ........ OK (3 sources: A,B,C)
+  R009 confidence floor ........................ OK (62% >= 60%)
+  (every ACTIVE rule in rulebook.md gets a line — generated, not hardcoded)
 
 INVALIDATION
   [what would prove this wrong, specifically. a price, a level, a time.]
