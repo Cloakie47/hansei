@@ -490,10 +490,11 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False,
         entry["spec_superseded"] = True
     place.append_jsonl(PROPOSALS_LOG, entry)
     if verdict == "APPROVED":
-        # keep the draft for the placement step (place.py prepare needs it)
+        # keep the draft for the placement step (place.py prepare needs it,
+        # including the id it uses as newClientOrderId)
         APPROVED_DIR.mkdir(parents=True, exist_ok=True)
         (APPROVED_DIR / f"{pid}.json").write_text(
-            json.dumps(draft, indent=2, ensure_ascii=False), encoding="utf-8")
+            json.dumps(dict(draft, id=pid), indent=2, ensure_ascii=False), encoding="utf-8")
     pending_path.unlink()
     return entry
 
