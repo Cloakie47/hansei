@@ -161,7 +161,8 @@ def _check_r001(draft, ctx):
         return "SKIPPED", "balance 0 — not enforceable, orderTest does not check balance"
     if aff["status"] == "OK":
         pct = aff["fraction_of_balance"] * 100
-        return "OK", (f"{aff['notional_usdt']:.2f} of {aff['usdt_free']:.2f} USDT = {pct:.1f}%")
+        return "OK", (f"{aff['notional_usdt']:.2f} of {aff['usdt_free']:.2f} USDT = {pct:.1f}% "
+                      f"[balance via {aff.get('balance_source', '?')}]")
     return "BLOCKED", aff.get("note", "affordability check failed")
 
 

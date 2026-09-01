@@ -102,34 +102,112 @@ def proposal_notional_usdt(proposal):
     return None
 
 
-def usdt_free(account):
-    """Free USDT from either MCP balance format.
-
-    Primary: spot_getAccount ({"balances": [{"asset","free"},...]}).
-    Fallback: wallet_queryUserWalletBalance queried with quoteAsset=USDT
-    (list of {"walletName","balance"}) — needed because spot_getAccount has
-    been observed serving a stale cached snapshot after a fresh deposit.
-    Caveat on the fallback: it is the Spot wallet's total USDT valuation,
-    which equals free USDT only while the wallet holds nothing but USDT."""
-    if isinstance(account, dict):
-        for bal in account.get("balances", []):
-            if bal.get("asset") == "USDT":
-                return float(bal.get("free", 0))
-        return 0.0
-    if isinstance(account, list):
-        for w in account:
-            if w.get("walletName") == "Spot":
-                return float(w.get("balance", 0))
+def _account_free_usdt(acct):
+    for bal in acct.get("balances", []):
+        if bal.get("asset") == "USDT":
+            return float(bal.get("free", 0))
     return 0.0
+
+
+def _account_holds_non_usdt(acct):
+    return any(bal.get("asset") != "USDT" and
+               (float(bal.get("free", 0)) or float(bal.get("locked", 0)))
+               for bal in acct.get("balances", []))
+
+
+def _wallet_spot_balance(wallet_summary):
+    for w in wallet_summary or []:
+        if w.get("walletName") == "Spot":
+            return float(w.get("balance", 0))
+    return 0.0
+
+
+def last_live_fill_ms():
+    latest = 0
+    if FILLS_LOG.exists():
+        from datetime import datetime, timezone
+        for line in FILLS_LOG.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            f = json.loads(line)
+            if f.get("mode") == "LIVE":
+                ts = datetime.strptime(f["ts"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                latest = max(latest, int(ts.timestamp() * 1000))
+    return latest
+
+
+def resolve_balance(ctx):
+    """Trustworthy free USDT, or a refusal. Never guesses.
+
+    ctx is either the legacy spot_getAccount dict ({"balances": [...]}) or a
+    combined context: {"spot_account": <spot_getAccount>, "wallet_summary":
+    <wallet_queryUserWalletBalance quoteAsset=USDT>, "last_flow_ms": <ms of
+    most recent known deposit/withdrawal>, "deposits_only_usdt": bool}.
+
+    Path 1: spot_getAccount free USDT, ONLY when its updateTime is at least
+    as fresh as every known balance flow (supplied deposits plus LIVE fills
+    recorded locally). spot_getAccount has been observed serving a stale
+    cached snapshot after a deposit (docs/bug-report-stale-getaccount.md).
+    Path 2: wallet-summary Spot valuation, ONLY while nothing but USDT is
+    held (no non-USDT asset in the account snapshot, no LIVE fill recorded,
+    and the caller attests deposits were USDT-only) — the valuation equals
+    free USDT only under that assumption.
+    Otherwise: raise. A trade must never be sized against a guess."""
+    if isinstance(ctx, dict) and "spot_account" in ctx:
+        acct = ctx["spot_account"]
+        wallet = ctx.get("wallet_summary")
+        known_flow = max(int(ctx.get("last_flow_ms") or 0), last_live_fill_ms())
+        update_time = int(acct.get("updateTime") or 0)
+        if update_time >= known_flow:
+            return {"usdt_free": _account_free_usdt(acct),
+                    "path": "spot_getAccount(fresh)",
+                    "detail": f"updateTime {update_time} >= last known flow {known_flow}"}
+        non_usdt = _account_holds_non_usdt(acct) or last_live_fill_ms() > 0
+        if wallet is not None and not non_usdt and ctx.get("deposits_only_usdt") is True:
+            return {"usdt_free": _wallet_spot_balance(wallet),
+                    "path": "wallet_summary(usdt-only)",
+                    "detail": (f"spot_getAccount stale (updateTime {update_time} < "
+                               f"flow {known_flow}); wallet Spot valuation trusted — "
+                               f"no non-USDT holdings, no LIVE fills, deposits USDT-only")}
+        raise RuntimeError(
+            "cannot establish trustworthy free USDT: spot_getAccount is stale "
+            f"(updateTime {update_time} < last known flow {known_flow}) and the "
+            "wallet-summary fallback is invalid "
+            f"({'non-USDT assets are held' if non_usdt else 'wallet summary missing or deposits not attested USDT-only'}). "
+            "Refusing to size a trade against a guess.")
+    if isinstance(ctx, dict) and "balances" in ctx:
+        # Legacy spot_getAccount dict with no flow context: the only known
+        # flows are local LIVE fills; getAccount must be at least that fresh.
+        known_flow = last_live_fill_ms()
+        update_time = int(ctx.get("updateTime") or 0)
+        if update_time >= known_flow:
+            return {"usdt_free": _account_free_usdt(ctx),
+                    "path": "spot_getAccount(legacy)",
+                    "detail": "no external flow context supplied"}
+        raise RuntimeError(
+            "cannot establish trustworthy free USDT: legacy account snapshot "
+            f"(updateTime {update_time}) is older than the last LIVE fill "
+            f"({known_flow}). Refusing to size a trade against a guess.")
+    raise RuntimeError(
+        "cannot establish trustworthy free USDT: unrecognised balance context "
+        f"({type(ctx).__name__}). A bare wallet summary is never sufficient. "
+        "Refusing to size a trade against a guess.")
+
+
+def usdt_free(account):
+    """Back-compat wrapper: trustworthy balance or raise (see resolve_balance)."""
+    return resolve_balance(account)["usdt_free"]
 
 
 def affordability_check(proposal, account):
     """R001 pre-flight, enforced before any tool call in both modes.
     Raises on violation. Balance 0 returns SKIPPED (not a failure) so paper
     fills against an unfunded account are visibly marked in the log."""
-    balance = usdt_free(account)
+    src = resolve_balance(account)  # raises when no trustworthy figure exists
+    balance = src["usdt_free"]
     if balance == 0:
         return {"status": "SKIPPED", "usdt_free": 0.0,
+                "balance_source": src["path"],
                 "note": "balance 0 — R001 not enforceable, orderTest does not check balance"}
     notional = proposal_notional_usdt(proposal)
     if notional is None:
@@ -147,7 +225,8 @@ def affordability_check(proposal, account):
             f"R001 violation: notional {notional:.2f} USDT exceeds 20% of "
             f"balance ({limit:.2f} of {balance:.2f}). Refusing to call anything.")
     return {"status": "OK", "usdt_free": balance, "notional_usdt": notional,
-            "fraction_of_balance": round(notional / balance, 4)}
+            "fraction_of_balance": round(notional / balance, 4),
+            "balance_source": src["path"]}
 
 
 def build_order_args(proposal):
