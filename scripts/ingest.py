@@ -30,6 +30,26 @@ ROOT = Path(__file__).resolve().parent.parent
 DISCARD_LOG = ROOT / "logs" / "signals_discarded.jsonl"
 EXCHANGE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo?symbol={symbol}"
 
+# R006: canonical contract per (ticker, chainId). A signal's contract must
+# match, or the signal is DISCARDED — fail-closed: no entry here means no
+# acceptance, ticker-string matches alone are never sufficient. BSC ("56")
+# entries are the long-established Binance-Peg / issuer contracts.
+CANONICAL_CONTRACTS = {
+    ("XRP", "56"): "0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe",
+    ("ADA", "56"): "0x3ee2200efb3400fabb9aacf31297cbdd1d435d47",
+    ("DOGE", "56"): "0xba2ae424d960c26247dd6c32edc70b295c744c43",
+    ("LINK", "56"): "0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd",
+    ("DOT", "56"): "0x7083609fce4d1d8dc0c979aab8c869ea2c873402",
+    ("LTC", "56"): "0x4338665cbb7b2485a8855a139b75d5e34ab0db94",
+    ("BCH", "56"): "0x8ff795a6f4d97e7887c79bea79aba5cc76444adf",
+    ("ETH", "56"): "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+    ("UNI", "56"): "0xbf5140a22578168fd562dccf235e5d43a02ce9b1",
+    ("ATOM", "56"): "0x0eb3a705fc54725037cc9e008bdede697f62f335",
+    ("WIN", "56"): "0xaef0d72a118ce24fee3cd1d43d383897d05b4e99",
+    ("CAKE", "56"): "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+    ("SOL", "56"): "0x570a5d26f7765ecb712c0924e4de545b89fd43df",
+}
+
 _symbol_cache = {}
 
 
@@ -75,14 +95,37 @@ def check_eligibility(ticker):
     return True, symbol, None
 
 
-def log_discard(signal, ticker, reason):
-    place.append_jsonl(DISCARD_LOG, {
+def signal_contract(signal):
+    return signal.get("contractAddress") or signal.get("ca")
+
+
+def check_canonical(signal, ticker):
+    """R006, fail-closed. (ok, reason, expected)."""
+    chain_id = str(signal.get("chainId") or "56")
+    expected = CANONICAL_CONTRACTS.get((ticker, chain_id))
+    observed = signal_contract(signal)
+    if expected is None:
+        return False, (f"R006: no canonical contract known for {ticker} on chain "
+                       f"{chain_id} — fail-closed discard"), None
+    if not observed:
+        return False, f"R006: signal has no contract address to verify against canonical", expected
+    if observed.lower() != expected.lower():
+        return False, (f"R006: contract mismatch — observed {observed}, "
+                       f"canonical {expected}"), expected
+    return True, None, expected
+
+
+def log_discard(signal, ticker, reason, expected_contract=None):
+    entry = {
         "ts": place.now_iso(),
         "ticker": ticker,
-        "contract": signal.get("contractAddress"),
+        "contract": signal_contract(signal),
         "chainId": signal.get("chainId"),
         "reason": reason,
-    })
+    }
+    if expected_contract is not None:
+        entry["canonical_contract"] = expected_contract
+    place.append_jsonl(DISCARD_LOG, entry)
 
 
 def filter_signals(signals):
@@ -95,12 +138,17 @@ def filter_signals(signals):
             discarded.append((sig, "no ticker field on signal"))
             continue
         ok, symbol, reason = check_eligibility(ticker)
-        if ok:
-            sig["_spot_symbol"] = symbol
-            eligible.append(sig)
-        else:
+        if not ok:
             log_discard(sig, ticker, reason)
             discarded.append((sig, reason))
+            continue
+        ok6, reason6, expected = check_canonical(sig, ticker)
+        if not ok6:
+            log_discard(sig, ticker, reason6, expected_contract=expected)
+            discarded.append((sig, reason6))
+            continue
+        sig["_spot_symbol"] = symbol
+        eligible.append(sig)
     return eligible, discarded
 
 

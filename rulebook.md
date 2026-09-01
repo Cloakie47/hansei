@@ -10,3 +10,7 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   surface.
 - **R005** Only propose assets that exist as an active Binance spot USDT pair.
   Signals for non-listed assets are discarded at ingest.
+- **R006** A signal counts as evidence for a spot pair only if its contract
+  address matches the canonical Binance-Peg or issuer contract for that asset.
+  If the canonical contract cannot be determined, the signal is DISCARDED, not
+  accepted. Ticker-string matches alone are never sufficient.
