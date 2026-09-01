@@ -116,6 +116,9 @@ hansei/
 }
 ```
 
+Any log entry with `"test": true` is a synthetic pipeline test — no decision
+packet, no Pilot verdict. It is excluded from Sync Rate and ALL Debrief metrics.
+
 `rulebook.md` entries are numbered `R001`, `R002`, ... and never renumbered.
 Deleted rules are struck through, not removed, so the history stays readable.
 
