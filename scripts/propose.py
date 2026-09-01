@@ -195,6 +195,19 @@ def _check_r006(draft, ctx):
     return "OK", "enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed"
 
 
+def _check_r008(draft, ctx):
+    base = re.sub(r"(USDT|USDC|FDUSD|TUSD|BTC|ETH|BNB)$", "", draft["symbol"])
+    if base in TOP_20_BASES:
+        return "OK", f"N/A — {base} is top-20, vetting not required"
+    vet = draft.get("vetting")
+    if not isinstance(vet, dict) or "verdict" not in vet:
+        return "BLOCKED", f"{base} not top-20 and no vetting result in draft (R008 fail-closed)"
+    path, verdict = vet.get("path"), vet.get("verdict")
+    if verdict == "PASS":
+        return "OK", f"vetted via {path}: {vet.get('detail')}"
+    return "BLOCKED", f"vetting via {path} FAILED: {vet.get('detail')}"
+
+
 def _check_r007(draft, ctx):
     tags = evidence_sources(draft)
     counted = sorted(tags & R007_SOURCES)
@@ -210,7 +223,7 @@ def _check_r007(draft, ctx):
 
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
             "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
-            "R007": _check_r007}
+            "R007": _check_r007, "R008": _check_r008}
 
 
 def run_rule_checks(draft, rules, ctx):
@@ -252,9 +265,14 @@ def render_packet(pid, draft, checks):
             lines.append(f"  {BULLET} [{ev.get('source', '?')}] {ev.get('text', '')}")
         else:
             lines.append(f"  {BULLET} {ev}")
-    audit_res = next((c for c in checks if c["id"] == "R002"), None)
-    audit_txt = "N/A (top-20)" if audit_res and "N/A" in audit_res["detail"] else draft.get("audit", "N/A")
-    lines.append(f"  {BULLET} Token audit: {audit_txt}")
+    vet_res = next((c for c in checks if c["id"] in ("R008", "R002")), None)
+    if vet_res and "N/A" in vet_res["detail"]:
+        vet_txt = "N/A (top-20)"
+    elif isinstance(draft.get("vetting"), dict):
+        vet_txt = f"{draft['vetting'].get('verdict')} via {draft['vetting'].get('path')}"
+    else:
+        vet_txt = draft.get("audit", "N/A")
+    lines.append(f"  {BULLET} Vetting: {vet_txt}")
     lines += ["", "RULES CHECKED"]
     lines += [_rule_line(c) for c in checks]
     lines += [
@@ -294,12 +312,15 @@ def build_packet(draft, market, account):
 
 def save_pending(pid, draft, checks):
     PENDING_DIR.mkdir(parents=True, exist_ok=True)
+    top20 = any(c["id"] in ("R002", "R008") and "N/A" in c["detail"] for c in checks)
+    vet = draft.get("vetting") or {}
     pending = {
         "id": pid,
         "draft": draft,
         "rules_checked": [c["id"] for c in checks],
-        "audit_passed": (None if any(c["id"] == "R002" and "N/A" in c["detail"] for c in checks)
-                         else draft.get("audit") == "PASS"),
+        "audit_passed": (None if top20
+                         else vet.get("verdict", draft.get("audit")) == "PASS"),
+        "vetting_path": "N/A (top-20)" if top20 else vet.get("path", "none"),
     }
     (PENDING_DIR / f"{pid}.json").write_text(
         json.dumps(pending, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -346,6 +367,7 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False):
         "rules_checked": pending["rules_checked"],
         "invalidation": draft["invalidation"],
         "audit_passed": pending["audit_passed"],
+        "vetting_path": pending.get("vetting_path"),
         "verdict": verdict,
         "reject_reason": reason_code,
         "pilot_note": note,

@@ -21,6 +21,7 @@ CLI: python scripts/audit.py <chainId> <contractAddress>
 
 import json
 import sys
+import urllib.error
 import urllib.request
 import uuid
 
@@ -127,9 +128,89 @@ def audit_token(chain_id, contract_address):
                 "reasons": [f"unparseable audit — treated as FAIL: {e}"], "flags": []}
 
 
+# ---------------------------------------------------------------------------
+# R008 vetting — two paths. Contract-based assets go through the token audit
+# above; native L1 coins (no contract) are vetted against Binance spot
+# listing data. An asset that fits neither path is DISCARDED, not exempted.
+
+SPOT_API = "https://api.binance.com/api/v3"
+MIN_LISTING_AGE_DAYS = 180  # stated minimum for the native-coin path
+
+
+def _spot_get(path, query):
+    with urllib.request.urlopen(f"{SPOT_API}/{path}?{query}", timeout=30) as resp:
+        return json.loads(resp.read().decode())
+
+
+def native_listing_vet(spot_symbol, min_age_days=MIN_LISTING_AGE_DAYS):
+    """Vet a native (contract-less) asset against Binance spot listing data:
+    status TRADING, isSpotTradingAllowed, MARKET+LIMIT enabled (proxy for no
+    active trading restrictions), listing age >= min_age_days (age from the
+    pair's first monthly kline)."""
+    reasons = []
+    try:
+        info = _spot_get("exchangeInfo", f"symbol={spot_symbol}")["symbols"][0]
+    except urllib.error.HTTPError as e:
+        if e.code == 400:
+            return {"path": "listing-data", "verdict": "FAIL",
+                    "reasons": [f"{spot_symbol} is not listed on Binance spot"], "detail": None}
+        raise
+    if info.get("status") != "TRADING":
+        reasons.append(f"status {info.get('status')} != TRADING")
+    if not info.get("isSpotTradingAllowed"):
+        reasons.append("isSpotTradingAllowed false")
+    order_types = set(info.get("orderTypes") or [])
+    if not {"MARKET", "LIMIT"} <= order_types:
+        reasons.append(f"trading restricted — orderTypes {sorted(order_types)}")
+
+    klines = _spot_get("klines", f"symbol={spot_symbol}&interval=1M&limit=1000")
+    if not klines:
+        reasons.append("no kline history — cannot establish listing age")
+        age_days = None
+    else:
+        import time
+        age_days = (time.time() * 1000 - klines[0][0]) / 86_400_000
+        if age_days < min_age_days:
+            reasons.append(f"listing age {age_days:.0f}d < required {min_age_days}d")
+
+    detail = (f"status TRADING, spot allowed, orderTypes ok, listing age "
+              f"{age_days:.0f}d >= {min_age_days}d" if not reasons else "; ".join(reasons))
+    return {"path": "listing-data", "verdict": "FAIL" if reasons else "PASS",
+            "reasons": reasons, "detail": detail}
+
+
+def vet_asset(contract_address=None, chain_id=None, spot_symbol=None):
+    """R008 router. Contract-based -> query-token-audit; native -> listing
+    data. Neither determinable -> FAIL (discard, never exempt)."""
+    if contract_address and chain_id:
+        result = audit_token(chain_id, contract_address)
+        return {"path": "query-token-audit", "verdict": result["verdict"],
+                "reasons": result["reasons"],
+                "detail": (f"riskLevel {result['level']} ({result['level_enum']}), "
+                           f"buyTax {result.get('buy_tax')}, sellTax {result.get('sell_tax')}"
+                           if result["verdict"] == "PASS" else "; ".join(result["reasons"]))}
+    if spot_symbol:
+        return native_listing_vet(spot_symbol)
+    return {"path": "none", "verdict": "FAIL",
+            "reasons": ["no contract and no spot symbol — cannot vet by either path, discarded"],
+            "detail": "unvettable"}
+
+
 def main(argv):
+    if len(argv) >= 2 and argv[1] == "vet":
+        # audit.py vet --symbol DASHUSDT | audit.py vet --contract <ca> <chainId>
+        if "--symbol" in argv:
+            result = vet_asset(spot_symbol=argv[argv.index("--symbol") + 1])
+        elif "--contract" in argv:
+            i = argv.index("--contract")
+            result = vet_asset(contract_address=argv[i + 1], chain_id=argv[i + 2])
+        else:
+            print("usage: audit.py vet --symbol <PAIR> | vet --contract <address> <chainId>")
+            return 1
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if result["verdict"] == "PASS" else 2
     if len(argv) != 3:
-        print("usage: audit.py <chainId> <contractAddress>")
+        print("usage: audit.py <chainId> <contractAddress> | audit.py vet ...")
         return 1
     result = audit_token(argv[1], argv[2])
     print(json.dumps(result, indent=2, ensure_ascii=False))

@@ -1,0 +1,69 @@
+{
+  "id": "p-20260901-006",
+  "draft": {
+    "symbol": "DASHUSDT",
+    "side": "BUY",
+    "type": "MARKET",
+    "quoteOrderQty": 25,
+    "evidence": [
+      {
+        "source": "A",
+        "text": "ticker24hr all-pairs -> DASHUSDT 24h -7.61%, quote volume 25.2m USDT"
+      },
+      {
+        "source": "A",
+        "text": "volume vs own 7d avg -> 2.11x"
+      },
+      {
+        "source": "A",
+        "text": "last 43.94 vs day VWAP -> -4.38%"
+      },
+      {
+        "source": "B",
+        "text": "klines 1h x168 -> price at 60% of 7d range (36.91 - 48.5)"
+      },
+      {
+        "source": "B",
+        "text": "last 24h kline volume 1.93x prior 6d daily avg"
+      },
+      {
+        "source": "B",
+        "text": "current 1h candle body 0.26x avg of prior 24"
+      },
+      {
+        "source": "C",
+        "text": "depth ±1% of mid -> bids 323k / asks 111k USDT, imbalance 2.92"
+      },
+      {
+        "source": "C",
+        "text": "spread 4.6 bps"
+      }
+    ],
+    "signals_used": [
+      "spot_ticker24hr(all-pairs)",
+      "spot_klines",
+      "spot_depth"
+    ],
+    "confidence": 0.55,
+    "thesis": "DASH is down 7.6% on 2x volume while bids within 1% of mid outweigh asks 2.9x, a dip against visible support with the pair still at 60% of its 7d range.",
+    "invalidation": "Bid imbalance collapsing below 1.0 or a 1h close below 42.0 invalidates the supported-dip read.",
+    "size_reasoning": "25 USDT default stake, same basis as all packets at current funding.",
+    "vetting": {
+      "path": "listing-data",
+      "verdict": "PASS",
+      "reasons": [],
+      "detail": "status TRADING, spot allowed, orderTypes ok, listing age 2742d >= 180d"
+    }
+  },
+  "rules_checked": [
+    "R001",
+    "R003",
+    "R004",
+    "R005",
+    "R006",
+    "R007",
+    "R008"
+  ],
+  "audit_passed": true,
+  "vetting_path": "listing-data"
+}

@@ -2,7 +2,8 @@
 Rules are numbered permanently. Deleted rules are struck through, never removed.
 
 - **R001** Never propose more than 20% of sub-account balance in one position.
-- **R002** Run query-token-audit before proposing anything outside the top 20 pairs.
+- ~~**R002** Run query-token-audit before proposing anything outside the top 20
+  pairs.~~ Superseded by R008.
 - **R003** Do not re-propose an idea rejected in the last 24h unless something
   material changed — and state what changed.
 - **R004** Any restriction on a tool must also cover tool_execute invoked with
@@ -17,3 +18,10 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
 - **R007** Evidence must draw on at least two structurally independent sources
   (cross-sectional, time series, order book, report). Multiple readings of one
   source count as one.
+- **R008** Every asset outside the top 20 must pass a vetting check before it
+  can be proposed. Contract-based assets are vetted with query-token-audit.
+  Assets with no contract (native L1 coins) are vetted against Binance spot
+  listing data instead: the pair must have status TRADING, isSpotTradingAllowed
+  true, no active trading restrictions, and a listing age above a stated
+  minimum. An asset that cannot be vetted by either path is DISCARDED, not
+  exempted.
