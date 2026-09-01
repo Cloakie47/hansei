@@ -5,3 +5,4 @@
 *.key
 credentials*
 secrets*
+__pycache__/
