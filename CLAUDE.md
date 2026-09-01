@@ -64,6 +64,15 @@ Skills in use (install with `npx skills add <url>`):
 - `square-post` — publish the nightly Debrief to Binance Square
 - `binance-agentic-wallet` — optional, x402 buyer-side payments (stretch goal only)
 
+## Operational constraints (verified 2026-09-01)
+
+- MCP tools are only callable inside a live Claude Code session (session OAuth).
+  There is no cron and no unattended run. The Debrief is a command the Pilot
+  runs, not a scheduled job.
+- Fee baseline for Debrief fee-drag calculations: 0.1% maker, 0.1% taker,
+  25% BNB discount available (verified via spot.orderTest with
+  computeCommissionRates on BNBUSDT).
+
 ## Verified write surface
 
 - Visible write tools: `spot_newOrder`, `spot_deleteOrder`, `spot_deleteOpenOrders`
