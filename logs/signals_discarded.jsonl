@@ -22,3 +22,43 @@
 {"ts": "2026-09-01T16:58:15Z","ticker": "MONKEY","contract": "0x684a1768c8d0098811017b7812c23978dd58c276","chainId": "56","reason": "MONKEYUSDT is not listed on Binance spot"}
 {"ts": "2026-09-01T16:58:16Z","ticker": "BLORK","contract": "0x25f954c87172864b7d106fba3e3e17f5d9ce7777","chainId": "56","reason": "BLORKUSDT is not listed on Binance spot"}
 {"ts": "2026-09-01T16:58:16Z","ticker": "奶蛙","contract": "0x650532b8596375f60c62b00e20377a1c9ebf7777","chainId": "56","reason": "ticker '奶蛙' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:00Z","ticker": "AORANGE","contract": null,"chainId": null,"reason": "AORANGEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:01Z","ticker": "MARSCOIN","contract": null,"chainId": null,"reason": "MARSCOINUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:01Z","ticker": "CARE","contract": null,"chainId": null,"reason": "CAREUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:01Z","ticker": "MARSCOIN","contract": null,"chainId": null,"reason": "MARSCOINUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:01Z","ticker": "贱橙","contract": null,"chainId": null,"reason": "ticker '贱橙' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:01Z","ticker": "APPLE","contract": null,"chainId": null,"reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:01Z","ticker": "APPLE","contract": null,"chainId": null,"reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:01Z","ticker": "佑宝","contract": null,"chainId": null,"reason": "ticker '佑宝' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:02Z","ticker": "BNC","contract": null,"chainId": null,"reason": "BNCUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:02Z","ticker": "ELMT","contract": null,"chainId": null,"reason": "ELMTUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:02Z","ticker": "GIVE","contract": null,"chainId": null,"reason": "GIVEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "JOHNAPPLE","contract": null,"chainId": null,"reason": "JOHNAPPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "ORANGE","contract": null,"chainId": null,"reason": "ORANGEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "APPLE","contract": null,"chainId": null,"reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "APPLE","contract": null,"chainId": null,"reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "APPLE","contract": null,"chainId": null,"reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "ORANGE","contract": null,"chainId": null,"reason": "ORANGEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "APPLE⁠","contract": null,"chainId": null,"reason": "ticker 'APPLE\\u2060' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "APPLE","contract": null,"chainId": null,"reason": "APPLEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:03Z","ticker": "ORANGE","contract": null,"chainId": null,"reason": "ORANGEUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:04Z","ticker": "FLORK","contract": null,"chainId": null,"reason": "FLORKUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:04Z","ticker": "HACKER","contract": null,"chainId": null,"reason": "HACKERUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:04Z","ticker": "蝴蝶人生","contract": null,"chainId": null,"reason": "ticker '蝴蝶人生' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:05Z","ticker": "BINUINU","contract": null,"chainId": null,"reason": "BINUINUUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:05Z","ticker": "牛来","contract": null,"chainId": null,"reason": "ticker '牛来' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:05Z","ticker": "肥嘟嘟","contract": null,"chainId": null,"reason": "ticker '肥嘟嘟' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:05Z","ticker": "CDXR","contract": null,"chainId": null,"reason": "CDXRUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:06Z","ticker": "SWITCH","contract": null,"chainId": null,"reason": "SWITCHUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:06Z","ticker": "GREEN","contract": null,"chainId": null,"reason": "GREENUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:06Z","ticker": "GULD","contract": null,"chainId": null,"reason": "GULDUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:07Z","ticker": "EZ","contract": null,"chainId": null,"reason": "EZUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:07Z","ticker": "BNBCAT","contract": null,"chainId": null,"reason": "BNBCATUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:08Z","ticker": "6","contract": null,"chainId": null,"reason": "6USDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:08Z","ticker": "路人鱼","contract": null,"chainId": null,"reason": "ticker '路人鱼' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:08Z","ticker": "巴泰","contract": null,"chainId": null,"reason": "ticker '巴泰' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T16:59:08Z","ticker": "RALLY","contract": null,"chainId": null,"reason": "RALLYUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:09Z","ticker": "VELO","contract": null,"chainId": null,"reason": "VELOUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:09Z","ticker": "JUDAO","contract": null,"chainId": null,"reason": "JUDAOUSDT is not listed on Binance spot"}
+{"ts": "2026-09-01T16:59:09Z","ticker": "AST","contract": null,"chainId": null,"reason": "ASTUSDT status is BREAK, not TRADING"}
+{"ts": "2026-09-01T16:59:09Z","ticker": "A-WE","contract": null,"chainId": null,"reason": "ticker 'A-WE' is not a valid Binance spot symbol (non-alphanumeric)"}
