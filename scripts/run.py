@@ -177,6 +177,10 @@ def mechanical_draft(cand, stake, use_v1=False):
         "size_reasoning": (f"{stake} USDT = 20% of live balance (R001 ceiling, "
                            f"6 USDT floor) via place.default_stake."),
         "max_hold_hours": 72,
+        "setup": cand.get("setup"),
+        "setup_detail": cand.get("setup_detail"),
+        "rr": cand.get("rr"),
+        "market_regime": cand.get("regime"),
     }
 
 

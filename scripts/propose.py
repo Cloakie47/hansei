@@ -333,6 +333,16 @@ def render_packet(pid, draft, checks):
     ]
     if draft["confidence"] < LOW_CONVICTION:
         lines.append("LOW CONVICTION — below 60%, consider NO_PROPOSAL instead")
+    if draft.get("setup"):
+        lines.append(f"SETUP      {draft['setup']} — {draft.get('setup_detail', '')}")
+    rr = draft.get("rr")
+    if rr:
+        lines.append(f"R:R        {rr['rr']:.1f} : 1 (target {rr['target']:g}, "
+                     f"stop {rr['stop']:g}, entry ref {rr['entry']:g})")
+    reg = draft.get("market_regime")
+    if reg:
+        lines.append(f"REGIME     BTC {reg['regime']}, 24h {reg['btc_chg24_pct']:+.2f}% "
+                     f"(context only, not a gate)")
     lines += [
         f"THESIS     {draft['thesis']}",
         "",

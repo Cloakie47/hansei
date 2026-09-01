@@ -129,15 +129,29 @@ def source_a(floor=VOLUME_FLOOR):
     rows.sort(key=lambda r: max(abs(r["chg_pct"]) / A_CHG_PCT,
                                 abs(r["vwap_dist_pct"]) / A_VWAP_DIST), reverse=True)
     for r in rows[:TOP_CANDIDATES * 3]:
-        daily = get("klines", symbol=r["symbol"], interval="1d", limit=8)
-        prior = [float(k[7]) for k in daily[:-1]]  # quote asset volume, prior days
-        r["vol_ratio_7d"] = (r["quote_volume"] / (sum(prior) / len(prior))) if prior else None
+        daily = get("klines", symbol=r["symbol"], interval="1d", limit=30)
+        prior7 = [float(k[7]) for k in daily[-8:-1]]  # quote vol, prior 7 days
+        r["vol_ratio_7d"] = (r["quote_volume"] / (sum(prior7) / len(prior7))) if prior7 else None
+        closes = [float(k[4]) for k in daily]
         # pair's own volatility -> per-pair change threshold
-        daily_chgs = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[:-1]
+        daily_chgs = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[-8:-1]
                       if float(k[1])]
         avg_abs = sum(daily_chgs) / len(daily_chgs) if daily_chgs else None
         r["chg_threshold_pct"] = (max(A_CHG_PCT_MIN, A_CHG_VOL_MULT * avg_abs)
                                   if avg_abs is not None else A_CHG_PCT)
+        # daily-structure aggregates for the setup classifier
+        r["avg_abs_daily_pct"] = avg_abs
+        if len(closes) >= 25:
+            sma20 = sum(closes[-20:]) / 20
+            sma20_prev5 = sum(closes[-25:-5]) / 20
+            r["sma20"] = sma20
+            r["sma20_rising"] = sma20 > sma20_prev5
+            r["chg_3d_pct"] = (closes[-1] / closes[-4] - 1) * 100
+            r["chg_5d_pct"] = (closes[-1] / closes[-6] - 1) * 100
+            # consolidation window: days -10..-3 (before the current move)
+            window = daily[-10:-2]
+            r["consol_high"] = max(float(k[2]) for k in window)
+            r["consol_low"] = min(float(k[3]) for k in window)
     return rows, {"bstocks_excluded_total": len(bstocks),
                   "bstocks_above_floor": r011_floor_passing}
 
@@ -178,6 +192,7 @@ def source_b(symbol):
     body = abs(float(last_candle[4]) - float(last_candle[1]))
     prior_bodies = [abs(float(k[4]) - float(k[1])) for k in h1[-25:-1]]
     body_ratio = body / (sum(prior_bodies) / len(prior_bodies)) if prior_bodies else None
+    swing_low_48h = min(float(k[3]) for k in h1[-48:])
 
     ev, triggers = [], []
     ev.append(("B", f"klines 1h x168 -> price at {range_pos:.0%} of 7d range "
@@ -192,7 +207,8 @@ def source_b(symbol):
         ev.append(("B", f"current 1h candle body {body_ratio:.2f}x avg of prior 24"))
         if body_ratio >= 2.0:
             triggers.append("candle")
-    return {"range_pos": range_pos, "vol_expand": vol_expand,
+    return {"range_pos": range_pos, "vol_expand": vol_expand, "body_ratio": body_ratio,
+            "last": last, "hi_7d": hi, "lo_7d": lo, "swing_low_48h": swing_low_48h,
             "evidence": ev, "triggers": triggers}
 
 
@@ -238,8 +254,91 @@ def source_c(symbol, side="BUY"):
 
 
 # ---------------------------------------------------------------------------
+# Setup classifier (Pilot-directed 2026-09-02). The excursion ranking
+# structurally surfaces movers — it is built to chase. Every candidate is
+# classified before it can become a packet; CHASE and UNCLASSIFIED are
+# BLOCKED, fail-closed. Thresholds are transparent and per-pair (multiples
+# of the pair's own average daily move), and every classification is logged
+# to logs/setups.jsonl, blocked ones included.
+
+EXTENDED_MULT = 2.0     # |24h chg| >= 2x own avg daily move = extended
+EXTENDED_3D_MULT = 3.0  # or 3d chg >= 3x
+NEAR_HIGHS = 0.70       # range position counted as "near range highs"
+SUPPORT_ZONE_PCT = 4.0  # within 4% of the 20d mean = "support zone" (approx)
+DECLINE_5D_MULT = 2.5   # 5d decline >= 2.5x own avg = "extended decline"
+
+
+def classify_setup(row, b):
+    avg = row.get("avg_abs_daily_pct") or A_CHG_PCT
+    chg24, chg3, chg5 = row["chg_pct"], row.get("chg_3d_pct"), row.get("chg_5d_pct")
+    rp = b["range_pos"]
+    last, sma20 = b["last"], row.get("sma20")
+    if sma20 is None or chg3 is None:
+        return "UNCLASSIFIED", "insufficient daily history for classification"
+    extended = abs(chg24) >= EXTENDED_MULT * avg or abs(chg3) >= EXTENDED_3D_MULT * avg
+    if extended and rp >= NEAR_HIGHS:
+        return "CHASE", (f"extended ({chg24:+.1f}% 24h / {chg3:+.1f}% 3d vs avg "
+                         f"{avg:.1f}%) and at {rp:.0%} of range — blocked")
+    trend_up = last > sma20 and row.get("sma20_rising")
+    near_support = abs(last - sma20) / sma20 * 100 <= SUPPORT_ZONE_PCT
+    if trend_up and chg24 < 0 and near_support and rp < NEAR_HIGHS:
+        return "PULLBACK", (f"uptrend (close>{sma20:.4g}, SMA20 rising), retraced "
+                            f"{chg24:+.1f}% to within {SUPPORT_ZONE_PCT:.0f}% of the 20d mean")
+    consol_high = row.get("consol_high")
+    if (consol_high and last > consol_high
+            and (b["vol_expand"] or 0) >= B_VOL_EXPAND):
+        width_pct = (consol_high - row["consol_low"]) / last * 100
+        return "BREAKOUT", (f"cleared the {width_pct:.1f}%-wide consolidation high "
+                            f"{consol_high:.4g} on {b['vol_expand']:.1f}x volume")
+    if (chg5 is not None and chg5 <= -DECLINE_5D_MULT * avg and rp <= 0.20
+            and ((b["vol_expand"] or 0) >= B_VOL_EXPAND or (b.get("body_ratio") or 0) >= 2)):
+        return "REVERSAL", (f"extended decline ({chg5:+.1f}% 5d vs avg {avg:.1f}%), "
+                            f"at {rp:.0%} of range on elevated volume")
+    return "UNCLASSIFIED", (f"fits no setup: chg24 {chg24:+.1f}%, 3d {chg3:+.1f}%, "
+                            f"range {rp:.0%}, trend_up={trend_up} — blocked fail-closed")
+
+
+def risk_reward(row, b, setup):
+    """Structural target/stop from actual swing levels, not fixed percents.
+    Long-only: stop = 48h swing low; target = 7d swing high for PULLBACK and
+    BREAKOUT (breakouts use the range top as first objective), 7d range mid
+    for REVERSAL. Returns None when entry <= stop (broken structure)."""
+    entry = b["last"]
+    stop = b["swing_low_48h"]
+    if setup == "REVERSAL":
+        target = (b["hi_7d"] + b["lo_7d"]) / 2
+    else:
+        target = b["hi_7d"]
+    if entry <= stop or target <= entry:
+        return None
+    return {"entry": entry, "stop": stop, "target": target,
+            "rr": (target - entry) / (entry - stop)}
+
+
+def market_regime():
+    """BTC context: UPTREND / RANGE / DOWNTREND from daily SMA20, plus 24h
+    change. Printed on every scan and packet; NOT a gate (Pilot: observe
+    alongside outcomes first)."""
+    daily = get("klines", symbol="BTCUSDT", interval="1d", limit=30)
+    closes = [float(k[4]) for k in daily]
+    last = closes[-1]
+    sma20 = sum(closes[-20:]) / 20
+    sma20_prev5 = sum(closes[-25:-5]) / 20
+    chg24 = (last / closes[-2] - 1) * 100
+    if last > sma20 and sma20 > sma20_prev5:
+        regime = "UPTREND"
+    elif last < sma20 and sma20 < sma20_prev5:
+        regime = "DOWNTREND"
+    else:
+        regime = "RANGE"
+    return {"regime": regime, "btc_chg24_pct": round(chg24, 2),
+            "btc_last": last, "btc_sma20": round(sma20, 2)}
+
 
 def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
+    regime = market_regime()
+    print(f"MARKET REGIME: BTC {regime['regime']}, 24h {regime['btc_chg24_pct']:+.2f}% "
+          f"(last {regime['btc_last']:g} vs SMA20 {regime['btc_sma20']:g})", file=sys.stderr)
     rows, r011 = source_a(floor)
     # R011 exclusion log: every bstock that would have passed the volume floor
     # is logged with its reason; the full excluded count rides in the result.
@@ -254,13 +353,24 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
                        f"{ex['quote_volume']/1e6:.1f}m above floor — excluded from universe"),
         })
     candidates = []
+    setups_log = Path(__file__).resolve().parent.parent / "logs" / "setups.jsonl"
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import place as _place
     for row in rows[:top]:
         a_ev, a_trig = a_evidence(row)
         b = source_b(row["symbol"])
         c = source_c(row["symbol"], side="BUY")  # spot: drafts open long only
+        setup, setup_detail = classify_setup(row, b)
+        rr = risk_reward(row, b, setup) if setup not in ("CHASE", "UNCLASSIFIED") else None
+        _place.append_jsonl(setups_log, {
+            "ts": _place.now_iso(), "symbol": row["symbol"], "setup": setup,
+            "detail": setup_detail, "blocked": setup in ("CHASE", "UNCLASSIFIED"),
+            "rr": round(rr["rr"], 2) if rr else None,
+            "regime": regime["regime"]})
         # A candidate is packet-worthy only when at least TWO structurally
         # different sources show an abnormal reading (R007 in spirit; the
-        # hard check runs again in propose.py from the evidence tags).
+        # hard check runs again in propose.py from the evidence tags) AND the
+        # setup classifier admits it (CHASE/UNCLASSIFIED are blocked).
         sources_triggering = [s for s, trigs in
                               (("A", a_trig), ("B", b["triggers"]), ("C", c["triggers"]))
                               if trigs and "wide-spread" not in trigs]
@@ -268,7 +378,12 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "symbol": row["symbol"],
             "chg_pct": row["chg_pct"],
             "triggers": {"A": a_trig, "B": b["triggers"], "C": c["triggers"]},
-            "packet_worthy": len(sources_triggering) >= 2,
+            "setup": setup,
+            "setup_detail": setup_detail,
+            "rr": ({k: round(v, 6) for k, v in rr.items()} if rr else None),
+            "regime": regime,
+            "packet_worthy": (len(sources_triggering) >= 2
+                              and setup not in ("CHASE", "UNCLASSIFIED")),
             "metrics": {
                 "vol_ratio_7d": row.get("vol_ratio_7d"),
                 "vol_expand": b.get("vol_expand"),
@@ -282,6 +397,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "evidence": [{"source": s, "text": t} for s, t in a_ev + b["evidence"] + c["evidence"]],
         })
     return {
+        "regime": regime,
         "pairs_past_floor": len(rows),
         "floor_usdt": floor,
         "scanned_deep": min(top, len(rows)),
