@@ -30,10 +30,12 @@ six names in ~22 hours, and ENSO hit 3-source in all three scans. Names
 persist between scans; R010 (pending dedupe) and R003 (24h after rejection)
 exist precisely to stop the repeats becoming packets.
 
-One wrinkle surfaced by the data: run1 ENSO counted as 3-source while its
+One wrinkle surfaced by the data: RUN3 ENSO counted as 3-source while its
 book was ASK-heavy (imbalance 0.62) and its spread was 12 bps wide — the C
 trigger fires on |imbalance| in either direction, so a bearish book currently
-strengthens a BUY draft. Noted for part 3; not changed.
+strengthens a BUY draft. (Correction 2026-09-02: first written as "run1
+ENSO"; run1 ENSO's book was in fact bid-heavy at 2.04 — the defective
+instance was run3's. The defect itself was real and is now fixed.)
 
 ## 2. Projection: 4 scans/day for 5 days
 
@@ -68,7 +70,7 @@ The scan already computes, per candidate:
   Observed range inside tier 3: 1.89x (DASH run3) to 15.37x (ARB run1).
   An 8x spread in the strongest shared quantity. DISCRIMINATES.
 - BID/ASK IMBALANCE within 1% of mid. Observed inside tier 3: 0.62
-  (ask-heavy, ENSO run1) to 2.92 (DASH run1). Discriminates strongly —
+  (ask-heavy, ENSO run3) to 2.92 (DASH run1). Discriminates strongly —
   but only if made DIRECTIONAL: bid-heavy should support a BUY and
   ask-heavy should count against it, instead of |imbalance| firing either
   way as it does now. As-is it is a defect, not a signal. DISCRIMINATES
@@ -90,3 +92,16 @@ imbalance, and a spread penalty; range position stays out of it and candle
 ratio waits for more data. Not implemented: mapping v1 stands until the
 Pilot decides, and any v2 must fix the imbalance direction defect first or
 it will reward bearish books on BUY drafts.
+
+## Decision record (2026-09-02, Pilot)
+
+- The imbalance sign defect is FIXED in scan.py: source C is directional,
+  contra-side books are tagged C-CONTRA (shown in packets, never counted by
+  R007). Recount over the three scans: 9 of the 10 three-source instances
+  survive; run3 ENSO (0.62 ask-heavy) demoted to 2-source.
+- Deep-scan cap raised 8 -> 12 (throughput lever). R009's 60% floor and
+  mechanical confidence v1 untouched.
+- CONFIDENCE V2: APPROVED IN PRINCIPLE — base 62, plus log-scaled volume
+  multiple, plus direction-aligned imbalance, minus a spread penalty.
+  BLOCKED until at least 8 decided proposals exist to calibrate against.
+  Range position stays out of confidence and belongs in the thesis.
