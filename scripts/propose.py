@@ -57,7 +57,7 @@ LOW_CONVICTION = CONFIDENCE_FLOOR  # packet flag threshold (for >=60% packets)
 
 
 def log_suppressed(rule, draft, reason):
-    place.append_jsonl(SUPPRESSED_LOG, {
+    entry = {
         "ts": place.now_iso(),
         "rule": rule,
         "symbol": draft.get("symbol"),
@@ -65,7 +65,13 @@ def log_suppressed(rule, draft, reason):
         "confidence": draft.get("confidence"),
         "evidence_sources": sorted(evidence_sources(draft)),
         "reason": reason,
-    })
+    }
+    rr = draft.get("rr")
+    if rr and rr.get("rr") is not None:
+        entry["rr"] = round(rr["rr"], 3)  # near-misses stay visible
+    if draft.get("setup"):
+        entry["setup"] = draft["setup"]
+    place.append_jsonl(SUPPRESSED_LOG, entry)
 
 
 def pending_clash(symbol, side):
@@ -293,11 +299,21 @@ def _check_r010(draft, ctx):
     return "OK", "no pending packet for this symbol+side"
 
 
+def _check_r014(draft, ctx):
+    rr = draft.get("rr")
+    if not rr or rr.get("rr") is None:
+        return "BLOCKED", "no structural target/stop — blocked, not estimated"
+    if rr["rr"] < 2.0:
+        return "BLOCKED", f"R:R {rr['rr']:.2f}:1 < 2:1"
+    return "OK", (f"R:R {rr['rr']:.2f}:1 (target {rr['target']:g}, stop {rr['stop']:g}, "
+                  "structural levels)")
+
+
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
             "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
             "R007": _check_r007, "R008": _check_r008, "R009": _check_r009,
             "R010": _check_r010, "R011": _check_r011, "R012": _check_r012,
-            "R013": _check_r013}
+            "R013": _check_r013, "R014": _check_r014}
 
 
 def run_rule_checks(draft, rules, ctx):
@@ -400,6 +416,19 @@ def build_packet(draft, market, account):
         reason = f"duplicate-pending skip — {clash} already awaits a verdict"
         log_suppressed("R010", draft, reason)
         return None, (f"NO PACKET (R010): {draft['symbol']} {draft['side']} {reason}. "
+                      f"Logged to logs/suppressed.jsonl."), None
+    # R014: structural reward-to-risk gate. No structure = blocked, not estimated.
+    rr = draft.get("rr")
+    if not rr or rr.get("rr") is None:
+        reason = "R014: no structural target/stop could be derived — blocked, not estimated"
+        log_suppressed("R014", draft, reason)
+        return None, (f"NO PACKET (R014): {draft['symbol']} {draft['side']} {reason}. "
+                      f"Logged to logs/suppressed.jsonl."), None
+    if rr["rr"] < 2.0:
+        reason = (f"R014: reward-to-risk {rr['rr']:.2f}:1 below 2:1 "
+                  f"(target {rr['target']:g}, stop {rr['stop']:g})")
+        log_suppressed("R014", draft, reason)
+        return None, (f"NO PACKET (R014): {draft['symbol']} {draft['side']} {reason}. "
                       f"Logged to logs/suppressed.jsonl."), None
     rules = parse_active_rules()
     ctx = {

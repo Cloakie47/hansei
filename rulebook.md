@@ -43,3 +43,7 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   like any other proposal.
   (R012 and R013 wording drafted by the Unit, Pilot-approved as drafted
   2026-09-02 — kept because the exit stays behind the same approval gate.)
+- **R014** No packet may be generated with a reward-to-risk ratio below 2:1.
+  Target and stop are derived from market structure — recent swing highs and
+  lows — never from fixed percentages. A candidate that cannot produce a
+  structural target and stop is blocked, not estimated.
