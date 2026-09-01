@@ -76,6 +76,22 @@ def read_mode():
 
 
 R001_MAX_FRACTION = 0.20
+# Hard floor: Binance spot min notional is 5 USDT; we never propose below 6
+# to leave headroom for price movement between draft and fill.
+MIN_STAKE_USDT = 6.0
+
+
+def default_stake(usdt_balance):
+    """Stake derives from live balance: 20% of balance (R001 ceiling).
+    Refuses when 20% of balance is under the 6 USDT floor — there is no
+    'small but compliant' size below it."""
+    stake = round(R001_MAX_FRACTION * usdt_balance, 2)
+    if stake < MIN_STAKE_USDT:
+        raise RuntimeError(
+            f"stake refused: 20% of balance ({stake:.2f} USDT) is below the "
+            f"{MIN_STAKE_USDT:.0f} USDT floor. Balance must be >= "
+            f"{MIN_STAKE_USDT / R001_MAX_FRACTION:.0f} USDT to propose at all.")
+    return stake
 
 
 def proposal_notional_usdt(proposal):
@@ -87,9 +103,23 @@ def proposal_notional_usdt(proposal):
 
 
 def usdt_free(account):
-    for bal in account.get("balances", []):
-        if bal.get("asset") == "USDT":
-            return float(bal.get("free", 0))
+    """Free USDT from either MCP balance format.
+
+    Primary: spot_getAccount ({"balances": [{"asset","free"},...]}).
+    Fallback: wallet_queryUserWalletBalance queried with quoteAsset=USDT
+    (list of {"walletName","balance"}) — needed because spot_getAccount has
+    been observed serving a stale cached snapshot after a fresh deposit.
+    Caveat on the fallback: it is the Spot wallet's total USDT valuation,
+    which equals free USDT only while the wallet holds nothing but USDT."""
+    if isinstance(account, dict):
+        for bal in account.get("balances", []):
+            if bal.get("asset") == "USDT":
+                return float(bal.get("free", 0))
+        return 0.0
+    if isinstance(account, list):
+        for w in account:
+            if w.get("walletName") == "Spot":
+                return float(w.get("balance", 0))
     return 0.0
 
 
@@ -106,6 +136,11 @@ def affordability_check(proposal, account):
         raise RuntimeError(
             "cannot compute USDT notional for this proposal (MARKET by base "
             "quantity); refuse to place without a checkable notional (R001)")
+    if notional < MIN_STAKE_USDT:
+        raise RuntimeError(
+            f"stake floor violation: notional {notional:.2f} USDT is below the "
+            f"{MIN_STAKE_USDT:.0f} USDT floor (exchange min 5 + headroom). "
+            f"Refusing to call anything.")
     limit = R001_MAX_FRACTION * balance
     if notional > limit:
         raise RuntimeError(
@@ -221,9 +256,16 @@ def main(argv):
         entry = log_fill(proposal, build_call(proposal, read_mode()), response, affordability)
         print(json.dumps({"logged": entry["id"], "mode": entry["mode"],
                           "affordability": affordability["status"]}, indent=2))
+    elif cmd == "stake":
+        account = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
+        balance = usdt_free(account)
+        stake = default_stake(balance)  # raises below the floor
+        print(json.dumps({"usdt_free": balance, "stake_usdt": stake,
+                          "fraction": R001_MAX_FRACTION, "floor_usdt": MIN_STAKE_USDT}))
     else:
         print("usage: place.py prepare <proposal.json> <account.json> | "
-              "record <proposal.json> <account.json> <response.json>")
+              "record <proposal.json> <account.json> <response.json> | "
+              "stake <account.json>")
         return 1
     return 0
 
