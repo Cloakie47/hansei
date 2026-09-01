@@ -69,6 +69,11 @@ Skills in use (install with `npx skills add <url>`):
 - MCP tools are only callable inside a live Claude Code session (session OAuth).
   There is no cron and no unattended run. The Debrief is a command the Pilot
   runs, not a scheduled job.
+- Market scanning reads public api.binance.com endpoints directly for
+  payload-size reasons (the full-ticker response is 1.5MB and a scan is ~30
+  calls); all authenticated actions — account state, order validation, order
+  placement — go through the Binance MCP server. This line belongs in the
+  README too. State it plainly, do not bury it.
 - Fee baseline for Debrief fee-drag calculations: 0.1% maker, 0.1% taker,
   25% BNB discount available (verified via spot.orderTest with
   computeCommissionRates on BNBUSDT).
