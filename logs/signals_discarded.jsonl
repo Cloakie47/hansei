@@ -123,3 +123,4 @@
 {"ts": "2026-09-01T17:03:35Z","ticker": "JUDAO","contract": "0xf55dff7898930a2d28cdbc39d615b1624ac86888","chainId": null,"reason": "JUDAOUSDT is not listed on Binance spot"}
 {"ts": "2026-09-01T17:03:35Z","ticker": "AST","contract": "0x265b3982ea730748100947f52561a4eab54affff","chainId": null,"reason": "ASTUSDT status is BREAK, not TRADING"}
 {"ts": "2026-09-01T17:03:35Z","ticker": "A-WE","contract": "0xdda412537ef7a7fd4cbceca6cffd4cfadb837777","chainId": null,"reason": "ticker 'A-WE' is not a valid Binance spot symbol (non-alphanumeric)"}
+{"ts": "2026-09-01T19:26:16Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 41.8m above floor — excluded from universe"}

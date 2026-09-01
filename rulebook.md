@@ -32,3 +32,7 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
 - **R010** No new packet may be generated for a symbol+side that already has a
   PENDING packet awaiting a verdict. The scan logs it as a duplicate-pending
   skip and moves on.
+- **R011** Tokenized equity and RWA pairs (bstocks) are excluded from the
+  trading universe. They follow external market hours, halt on corporate
+  actions, and do not share the continuous-trading assumptions the scanner
+  is built on.

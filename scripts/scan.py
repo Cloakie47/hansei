@@ -61,24 +61,52 @@ def get(path, **params):
         return json.loads(resp.read().decode())
 
 
+# R011: tokenized equity / RWA (bstock) pairs are excluded at ingest, before
+# the volume floor. Detection is FUNCTIONAL, not a ticker blocklist: every
+# bstock pair carries permission group TRD_GRP_261 in exchangeInfo and no
+# crypto pair does (verified 2026-09-02: exactly the 68 tokenized names,
+# zero false positives — TRD_GRP_004-absence was rejected as a marker
+# because it also catches privacy coins and fiat). Group ids are opaque, so
+# if the marker ever matches nothing we warn instead of silently passing
+# equities through.
+BSTOCK_MARKER = "TRD_GRP_261"
+
+
 def active_usdt_pairs():
-    info = get("exchangeInfo")
-    return {s["symbol"]: s for s in info["symbols"]
-            if s["quoteAsset"] == "USDT" and s["status"] == "TRADING"
-            and s.get("isSpotTradingAllowed") and s["baseAsset"] not in STABLE_BASES}
+    info = get("exchangeInfo", permissions="SPOT", showPermissionSets="true")
+    pairs, bstocks = {}, set()
+    for s in info["symbols"]:
+        if not (s["quoteAsset"] == "USDT" and s["status"] == "TRADING"
+                and s.get("isSpotTradingAllowed") and s["baseAsset"] not in STABLE_BASES):
+            continue
+        ps = s.get("permissionSets") or [[]]
+        if ps and BSTOCK_MARKER in set(ps[0]):
+            bstocks.add(s["symbol"])
+            continue
+        pairs[s["symbol"]] = s
+    if not bstocks:
+        print("WARNING: R011 bstock marker matched zero pairs — the "
+              f"{BSTOCK_MARKER} detector may have rotted; verify before trusting "
+              "the universe.", file=sys.stderr)
+    return pairs, bstocks
 
 
 # ---------------------------------------------------------------------------
 # SOURCE A — cross-sectional
 
 def source_a(floor=VOLUME_FLOOR):
-    pairs = active_usdt_pairs()
+    pairs, bstocks = active_usdt_pairs()
     tickers = get("ticker/24hr")
-    rows = []
+    rows, r011_floor_passing = [], []
     for t in tickers:
+        qv = float(t["quoteVolume"])
+        if t["symbol"] in bstocks:
+            if qv >= floor:
+                # would have entered the pool — log the exclusion event
+                r011_floor_passing.append({"symbol": t["symbol"], "quote_volume": qv})
+            continue
         if t["symbol"] not in pairs:
             continue
-        qv = float(t["quoteVolume"])
         if qv < floor:
             continue
         last = float(t["lastPrice"])
@@ -99,7 +127,8 @@ def source_a(floor=VOLUME_FLOOR):
         daily = get("klines", symbol=r["symbol"], interval="1d", limit=8)
         prior = [float(k[7]) for k in daily[:-1]]  # quote asset volume, prior days
         r["vol_ratio_7d"] = (r["quote_volume"] / (sum(prior) / len(prior))) if prior else None
-    return rows
+    return rows, {"bstocks_excluded_total": len(bstocks),
+                  "bstocks_above_floor": r011_floor_passing}
 
 
 def a_evidence(row):
@@ -198,7 +227,19 @@ def source_c(symbol, side="BUY"):
 # ---------------------------------------------------------------------------
 
 def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
-    rows = source_a(floor)
+    rows, r011 = source_a(floor)
+    # R011 exclusion log: every bstock that would have passed the volume floor
+    # is logged with its reason; the full excluded count rides in the result.
+    for ex in r011["bstocks_above_floor"]:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import place
+        place.append_jsonl(Path(__file__).resolve().parent.parent / "logs" / "signals_discarded.jsonl", {
+            "ts": place.now_iso(), "ticker": ex["symbol"].replace("USDT", ""),
+            "contract": None, "chainId": None,
+            "reason": (f"R011: {ex['symbol']} is a tokenized equity/RWA pair "
+                       f"({BSTOCK_MARKER} marker), quote volume "
+                       f"{ex['quote_volume']/1e6:.1f}m above floor — excluded from universe"),
+        })
     candidates = []
     for row in rows[:top]:
         a_ev, a_trig = a_evidence(row)
@@ -221,6 +262,8 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
         "pairs_past_floor": len(rows),
         "floor_usdt": floor,
         "scanned_deep": min(top, len(rows)),
+        "r011_bstocks_excluded": r011["bstocks_excluded_total"],
+        "r011_above_floor": [e["symbol"] for e in r011["bstocks_above_floor"]],
         "candidates": candidates,
         "packet_worthy": [c["symbol"] for c in candidates if c["packet_worthy"]],
     }
