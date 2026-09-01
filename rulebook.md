@@ -41,3 +41,5 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
 - **R013** Maximum hold is 72 hours. When an open position ages past 72h,
   the Unit proposes an exit packet at the next scan; the Pilot decides it
   like any other proposal.
+  (R012 and R013 wording drafted by the Unit, Pilot-approved as drafted
+  2026-09-02 — kept because the exit stays behind the same approval gate.)
