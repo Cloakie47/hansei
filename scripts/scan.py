@@ -40,8 +40,9 @@ API = "https://api.binance.com/api/v3"
 STABLE_BASES = {"USDC", "FDUSD", "TUSD", "DAI", "EUR", "EURI", "AEUR", "USDP",
                 "XUSD", "USD1", "BFUSD", "PAXG"}
 
-VOLUME_FLOOR = 20_000_000   # 24h quote volume, USDT
-TOP_CANDIDATES = 12  # deep-scan cap; raised 8 -> 12 for throughput (2026-09-02)
+VOLUME_FLOOR = 15_000_000   # 24h quote volume, USDT; 20m -> 15m 2026-09-02
+                            # (+15 pairs coverage; 10-15m band rejected: thin books)
+TOP_CANDIDATES = 16  # deep-scan cap; 8 -> 12 -> 16 (floor drop widened the pool)
 
 # Candidate thresholds (transparent, tunable; every trigger is reported)
 A_CHG_PCT = 4.0          # |24h change| worth attention

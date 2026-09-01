@@ -1,0 +1,2 @@
+{"ts": "2026-09-01T19:45:00Z","change": "volume floor 20m -> 15m","why": "coverage: 25 -> 40 eligible pairs; 10-15m band rejected (thin books). Numbers in logs/quiet-tape-diagnosis-2026-09-02.md"}
+{"ts": "2026-09-01T19:45:30Z","change": "deep-scan cap 12 -> 16","why": "floor drop widened pool to 40; cap 12 examined under a third of it"}
