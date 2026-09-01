@@ -171,7 +171,46 @@ def _check_r004(draft, ctx):
     return "OK", "tooling rule — enforced in place.py (assert_paper_safe + tool_execute log)"
 
 
-CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003, "R004": _check_r004}
+# R007: structurally independent evidence sources. A=cross-sectional,
+# B=time series, C=order book, D=report. ONCHAIN is optional context only —
+# it never counts toward the two, and may never be the sole basis.
+R007_SOURCES = {"A", "B", "C", "D"}
+
+
+def evidence_sources(draft):
+    tags = set()
+    for ev in draft.get("evidence", []):
+        if isinstance(ev, dict):
+            tags.add(str(ev.get("source", "?")).upper())
+        else:
+            tags.add("?")  # untagged string evidence never counts as a source
+    return tags
+
+
+def _check_r005(draft, ctx):
+    return "OK", "enforced at ingest (scripts/ingest.py) — on-chain signals filtered before packets"
+
+
+def _check_r006(draft, ctx):
+    return "OK", "enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed"
+
+
+def _check_r007(draft, ctx):
+    tags = evidence_sources(draft)
+    counted = sorted(tags & R007_SOURCES)
+    ignored = sorted(tags - R007_SOURCES)
+    if len(counted) >= 2:
+        detail = f"{len(counted)} independent sources: {','.join(counted)}"
+        if ignored:
+            detail += f" (context only, not counted: {','.join(ignored)})"
+        return "OK", detail
+    return "BLOCKED", (f"only {len(counted)} independent source(s) {counted}; "
+                       f"non-counting tags: {ignored} — need 2 of A/B/C/D")
+
+
+CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
+            "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
+            "R007": _check_r007}
 
 
 def run_rule_checks(draft, rules, ctx):
@@ -209,7 +248,10 @@ def render_packet(pid, draft, checks):
         "EVIDENCE",
     ]
     for ev in draft["evidence"]:
-        lines.append(f"  {BULLET} {ev}")
+        if isinstance(ev, dict):
+            lines.append(f"  {BULLET} [{ev.get('source', '?')}] {ev.get('text', '')}")
+        else:
+            lines.append(f"  {BULLET} {ev}")
     audit_res = next((c for c in checks if c["id"] == "R002"), None)
     audit_txt = "N/A (top-20)" if audit_res and "N/A" in audit_res["detail"] else draft.get("audit", "N/A")
     lines.append(f"  {BULLET} Token audit: {audit_txt}")

@@ -14,3 +14,6 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   address matches the canonical Binance-Peg or issuer contract for that asset.
   If the canonical contract cannot be determined, the signal is DISCARDED, not
   accepted. Ticker-string matches alone are never sufficient.
+- **R007** Evidence must draw on at least two structurally independent sources
+  (cross-sectional, time series, order book, report). Multiple readings of one
+  source count as one.
