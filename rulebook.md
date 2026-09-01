@@ -29,3 +29,6 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   a packet. Every suppressed draft is logged to logs/suppressed.jsonl with its
   symbol, side, confidence and evidence sources, so confidence clustering just
   above the floor is visible.
+- **R010** No new packet may be generated for a symbol+side that already has a
+  PENDING packet awaiting a verdict. The scan logs it as a duplicate-pending
+  skip and moves on.
