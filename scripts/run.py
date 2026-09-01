@@ -39,6 +39,7 @@ import scan as scanmod
 ROOT = HERE.parent
 BALANCE_CTX = ROOT / "logs" / "balance-ctx.json"
 BALANCE_MAX_AGE_S = 30 * 60
+SCAN_HISTORY = ROOT / "logs" / "scan-history.jsonl"
 
 MECH_CONFIDENCE = {1: 0.50, 2: 0.57, 3: 0.62}
 
@@ -138,6 +139,14 @@ def cmd_scan():
             skipped.append(text.split(".")[0])
     for s in skipped:
         print(f"  {s}")
+    place.append_jsonl(SCAN_HISTORY, {
+        "ts": place.now_iso(),
+        "pairs_past_floor": result["pairs_past_floor"],
+        "scanned_deep": result["scanned_deep"],
+        "packet_worthy": len(result["packet_worthy"]),
+        "packets": len(packets),
+        "suppressed": len(skipped),
+    })
     if packets:
         print("PACKETS GENERATED:")
         for p in packets:
@@ -203,6 +212,16 @@ def cmd_status():
     print(f"open packets: {len(rows)}")
     for r in rows:
         print(f"  {r['id']}  {r['symbol']}  {r['side']}  {r['confidence']:.0%}")
+    if SCAN_HISTORY.exists():
+        hist = [json.loads(l) for l in SCAN_HISTORY.read_text(encoding="utf-8").splitlines()
+                if l.strip()][-5:]
+        counts = [h["packets"] for h in hist]
+        print(f"packets per scan (last {len(counts)}): {', '.join(str(c) for c in counts)}")
+        if len(counts) >= 2 and counts[-1] == 0 and counts[-2] == 0:
+            print("NOTE: tape is quiet — two consecutive zero-packet scans. "
+                  "Not an error; no idea clearing the bar is a valid output.")
+    else:
+        print("packets per scan: no scan history yet")
     mode = place.read_mode()
     print(f"MODE: {mode}")
     return 0
