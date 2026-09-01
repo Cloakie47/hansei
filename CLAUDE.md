@@ -152,6 +152,11 @@ Deleted rules are struck through, not removed, so the history stays readable.
   No tables. No box-drawing characters. No unicode borders. One fact per line
   in the form "LABEL: RESULT — detail". Terminal tables get truncated and
   become unreadable when pasted.
+- **Pilot signal vs advisor directives.** Only entries in logs/proposals.jsonl
+  with an actual verdict logged by the Pilot count as Pilot signal for Debrief
+  Step 4. Rule changes and design directives — including those originating
+  from the Pilot's AI advisor — are NOT Pilot verdicts and must never be
+  inferred as trading preferences.
 
 ## Build order (do not skip ahead)
 
