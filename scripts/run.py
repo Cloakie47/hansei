@@ -55,13 +55,19 @@ MECH_CONFIDENCE = {1: 0.50, 2: 0.57, 3: 0.62}  # v1 mapping (kept behind --v1)
 # evidence cannot outscore full confluence). Floor of the formula: 0.40.
 # Spec targets verified in code: strong confluence reaches 70%+, three
 # sources never exceed 80%.
-CONF_V2_BASE = 0.62
+# TIER-DEPENDENT BASE (Pilot-approved 2026-09-02): 0.58 for two-source,
+# 0.62 for three-source. Rationale, recorded: eight of ten two-source
+# candidates clustered at 0.610-0.638 under a flat 0.62 base — the floor
+# had stopped discriminating at that tier. A two-source draft must EARN its
+# way over 60% on volume, aligned book, and tight spread, not arrive there
+# by default.
+CONF_V2_BASE_BY_TIER = {2: 0.58, 3: 0.62}
 CONF_V2_CAP3, CONF_V2_CAP2 = 0.80, 0.72
 
 
 def confidence_v2(n_sources, metrics):
     import math
-    conf = CONF_V2_BASE
+    conf = CONF_V2_BASE_BY_TIER.get(min(n_sources, 3), 0.58)
     vol_mult = max(metrics.get("vol_ratio_7d") or 1.0, metrics.get("vol_expand") or 1.0)
     conf += min(0.06, 0.02 * math.log2(max(vol_mult, 1.0)))
     imb = metrics.get("imbalance")
