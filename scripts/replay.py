@@ -19,6 +19,15 @@ Look-ahead caveat, disclosed: the replay universe is today's floor-passing
 pairs, which biases toward what is liquid NOW, not at T. Acceptable for a
 decision drill; not usable for strategy backtesting claims.
 
+CALIBRATION CAVEAT (Pilot-directed, 2026-09-02): drills carry A+B evidence
+only — there is no order-book history — so replay verdicts calibrate the
+Pilot on TWO-SOURCE evidence while live packets carry three sources. Replay
+outcomes MUST NOT be used to retune live confidence weights without
+adjusting for the missing C source: a weight fitted on A+B-only data has
+never seen the imbalance/spread terms and would misprice them. Replay stats
+prints this warning; treat replay hit rates as drill feedback, not as
+calibration input for confidence_v2's C-dependent terms.
+
 Commands:
   replay.py new [--days-ago N] [--seed S]   build a session, render packets
   replay.py pending                          list undecided replay packets
@@ -262,6 +271,9 @@ def cmd_stats():
     rej = [r for r in rows if r["verdict"] == "REJECTED"]
     print(f"replay decisions: {len(rows)} (approved {len(app)}, rejected {len(rej)}) — "
           f"drill data, never mixed into live Sync Rate")
+    print("CAVEAT: A+B evidence only (no order-book history). Do not retune live "
+          "confidence weights from these outcomes without adjusting for the "
+          "missing C source — see the header of scripts/replay.py.")
     def mean24(rs):
         vals = [r["outcome"]["chg_24h_pct"] for r in rs if r["outcome"]["chg_24h_pct"] is not None]
         return sum(vals) / len(vals) if vals else None
