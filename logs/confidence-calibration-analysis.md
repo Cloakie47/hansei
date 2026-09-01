@@ -142,6 +142,29 @@ Pilot wants the floor to keep real teeth at two sources, the lever is a
 tier-dependent base (e.g. 0.58 for two-source) — that is a gate-relevant
 change and NEEDS APPROVAL; not implemented.
 
+## Event record: v2 clustering, detected and corrected same-session (2026-09-02)
+
+The sequence, kept because it is the product working as designed:
+
+1. v2 SHIPPED (Pilot-approved option b) with a flat 0.62 base.
+2. The confounding check re-scored scan 6 and found STRUCTURAL CLUSTERING:
+   8 of 10 two-source drafts landed at 0.610-0.638, just above the 60%
+   floor — not gaming by an agent, clustering by construction. The exact
+   failure mode R009's suppression log was designed to expose, exposed in
+   the same session v2 shipped.
+3. CORRECTED same-session with a Pilot-approved tier-dependent base (0.58
+   two-source / 0.62 three-source). Rationale recorded: a two-source draft
+   must EARN its way over 60% on volume, aligned book, and tight spread,
+   not arrive there by default.
+4. Re-score after correction: 1 of 10 clears (CRV 0.622, on volume).
+   Distribution: 0.570-0.598 suppressed band, one earner above. The floor
+   discriminates again.
+5. Fresh live scan under the corrected settings: 32 pairs past floor, 16
+   deep, 9-10 packet-worthy, seven suppressed at 56-59.6%, TWO packets
+   earned their way over: FIL 60% (vetted via listing-data) and CRV 62%
+   (vetted via query-token-audit, riskLevel LOW). Zero would also have
+   been valid; two earners is what the tape gave.
+
 ## Decision record (2026-09-02, Pilot)
 
 - The imbalance sign defect is FIXED in scan.py: source C is directional,
