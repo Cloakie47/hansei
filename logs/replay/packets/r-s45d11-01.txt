@@ -1,0 +1,16 @@
+━━━ REPLAY PACKET r-s45d11-01 ━━━  (DRILL — historical, anonymised, not a live proposal)
+
+PROPOSAL   BUY [stake] USDT of SYM-22 (spot, market)
+CONFIDENCE 62%  (2-of-2 available sources; C has no history)
+THESIS     SYM-22 moved +4.71% in its trailing 24h (own-volatility threshold 2.5%), 24h volume 1.42x its prior average, sitting at 85% of its 7-day range.
+
+EVIDENCE
+  • [A] cross-sectional -> 24h +4.71% vs threshold 2.5%; volume 1.42x prior avg (20.2m USDT); triggers: ['chg']
+  • [B] time series -> 85% of 7d range; current candle body 2.43x prior 24 avg; triggers: ['candle']
+  • [C] unavailable in replay (no historical order book)
+
+INVALIDATION
+  The triggering excursion reversing within 24h: change sign flip or
+  volume back under 1x average.
+
+━━━ Pilot: python scripts/replay.py verdict r-s45d11-01 y|n [code] ━━━

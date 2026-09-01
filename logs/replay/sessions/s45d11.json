@@ -1,0 +1,44 @@
+{
+  "sid": "s45d11",
+  "t_ms": 1784401200000,
+  "days_ago": 45,
+  "seed": 11,
+  "packets": {
+    "r-s45d11-01": {
+      "alias": "SYM-22",
+      "confidence": 0.62,
+      "features": {
+        "chg24_pct": 4.710064430126648,
+        "vol_ratio": 1.4180345754273418,
+        "range_pos": 0.8470824949698192,
+        "chg_thr": 2.516287469346956
+      },
+      "outcome": {
+        "chg_6h_pct": -0.6577551453426755,
+        "chg_24h_pct": 1.1669849352853756,
+        "max_gain_pct": 1.1669849352853756,
+        "max_drawdown_pct": -0.9335879482283094
+      }
+    },
+    "r-s45d11-02": {
+      "alias": "SYM-14",
+      "confidence": 0.62,
+      "features": {
+        "chg24_pct": 4.764971023824849,
+        "vol_ratio": 4.131364598811487,
+        "range_pos": 0.5961538461538461,
+        "chg_thr": 2.8984661295126797
+      },
+      "outcome": {
+        "chg_6h_pct": 2.397049784880134,
+        "chg_24h_pct": -0.12292562999385304,
+        "max_gain_pct": 3.3804548248309807,
+        "max_drawdown_pct": -1.1677934849416038
+      }
+    }
+  },
+  "mapping": {
+    "r-s45d11-01": "LTCUSDT",
+    "r-s45d11-02": "TRUMPUSDT"
+  }
+}
