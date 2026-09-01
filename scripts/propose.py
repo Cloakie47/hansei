@@ -45,6 +45,9 @@ ROOT = Path(__file__).resolve().parent.parent
 RULEBOOK = ROOT / "rulebook.md"
 PROPOSALS_LOG = ROOT / "logs" / "proposals.jsonl"
 PENDING_DIR = ROOT / "logs" / "pending"
+PACKETS_DIR = ROOT / "packets"
+
+LOW_CONVICTION = 0.60  # below this, the packet carries a visible flag
 
 VALID_VERDICTS = {"APPROVED", "REJECTED", "NO_PROPOSAL"}
 VALID_REJECT_CODES = {"SIZE", "TIMING", "CONVICTION", "RISK", "DUPLICATE", "ASSET", "OTHER"}
@@ -256,6 +259,10 @@ def render_packet(pid, draft, checks):
         "",
         f"PROPOSAL   {draft['side']} {notional_txt} USDT of {draft['symbol']} (spot, {order_kind})",
         f"CONFIDENCE {round(draft['confidence'] * 100)}%",
+    ]
+    if draft["confidence"] < LOW_CONVICTION:
+        lines.append("LOW CONVICTION — below 60%, consider NO_PROPOSAL instead")
+    lines += [
         f"THESIS     {draft['thesis']}",
         "",
         "EVIDENCE",
@@ -310,6 +317,15 @@ def build_packet(draft, market, account):
     return pid, render_packet(pid, draft, checks), checks
 
 
+def save_packet_text(pid, text):
+    """The rendered packet is the artifact of record — terminal output gets
+    mangled in transit. Written at generation time, UTF-8."""
+    PACKETS_DIR.mkdir(parents=True, exist_ok=True)
+    path = PACKETS_DIR / f"{pid}.txt"
+    path.write_text(text + "\n", encoding="utf-8")
+    return path
+
+
 def save_pending(pid, draft, checks):
     PENDING_DIR.mkdir(parents=True, exist_ok=True)
     top20 = any(c["id"] in ("R002", "R008") and "N/A" in c["detail"] for c in checks)
@@ -334,6 +350,7 @@ def generate_packet(invoke, draft):
     pid, text, checks = build_packet(draft, market, account)
     if pid:
         save_pending(pid, draft, checks)
+        save_packet_text(pid, text)
     return pid, text, checks
 
 
@@ -418,6 +435,7 @@ def main(argv):
         if pid is None:
             return 2
         save_pending(pid, draft, checks)
+        save_packet_text(pid, text)
     elif cmd == "verdict":
         args = [a for a in argv[2:] if a != "--test"]
         test = "--test" in argv

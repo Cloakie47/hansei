@@ -1,0 +1,35 @@
+━━━ DECISION PACKET p-20260901-006 ━━━
+
+PROPOSAL   BUY 25 USDT of DASHUSDT (spot, market)
+CONFIDENCE 55%
+LOW CONVICTION — below 60%, consider NO_PROPOSAL instead
+THESIS     DASH is down 7.6% on 2x volume while bids within 1% of mid outweigh asks 2.9x, a dip against visible support with the pair still at 60% of its 7d range.
+
+EVIDENCE
+  • [A] ticker24hr all-pairs -> DASHUSDT 24h -7.61%, quote volume 25.2m USDT
+  • [A] volume vs own 7d avg -> 2.11x
+  • [A] last 43.94 vs day VWAP -> -4.38%
+  • [B] klines 1h x168 -> price at 60% of 7d range (36.91 - 48.5)
+  • [B] last 24h kline volume 1.93x prior 6d daily avg
+  • [B] current 1h candle body 0.26x avg of prior 24
+  • [C] depth ±1% of mid -> bids 323k / asks 111k USDT, imbalance 2.92
+  • [C] spread 4.6 bps
+  • Vetting: PASS via listing-data
+
+RULES CHECKED
+  R001 Never propose more than 20% of sub-account b ...... SKIPPED (balance 0 — not enforceable, orderTest does not check balance)
+  R003 Do not re-propose an idea rejected in the la ...... OK (no rejected proposal for this symbol+side in last 24h)
+  R004 Any restriction on a tool must also cover to ...... OK (tooling rule — enforced in place.py (assert_paper_safe + tool_execute log))
+  R005 Only propose assets that exist as an active ....... OK (enforced at ingest (scripts/ingest.py) — on-chain signals filtered before packets)
+  R006 A signal counts as evidence for a spot pair ....... OK (enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed)
+  R007 Evidence must draw on at least two structura ...... OK (3 independent sources: A,B,C)
+  R008 Every asset outside the top 20 must pass a v ...... OK (vetted via listing-data: status TRADING, spot allowed, orderTypes ok, listing age 2742d >= 180d)
+
+INVALIDATION
+  Bid imbalance collapsing below 1.0 or a 1h close below 42.0 invalidates the supported-dip read.
+
+SIZE REASONING
+  25 USDT default stake, same basis as all packets at current funding.
+
+━━━ Pilot: y / n ━━━
+If n, one code please: SIZE / TIMING / CONVICTION / RISK / DUPLICATE / ASSET / OTHER

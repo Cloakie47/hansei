@@ -1,0 +1,35 @@
+━━━ DECISION PACKET p-20260901-005 ━━━
+
+PROPOSAL   BUY 25 USDT of UNIUSDT (spot, market)
+CONFIDENCE 54%
+LOW CONVICTION — below 60%, consider NO_PROPOSAL instead
+THESIS     UNI broke to the top of its 7-day range on 2.4x average volume and is holding 85% of the range with a 1.8 bps spread, favouring continuation toward the 5.963 high while volume stays expanded.
+
+EVIDENCE
+  • [A] ticker24hr all-pairs -> UNIUSDT 24h +10.33%, quote volume 76.1m USDT
+  • [A] volume vs own 7d avg -> 2.40x
+  • [A] last 5.684 vs day VWAP -> +1.04%
+  • [B] klines 1h x168 -> price at 85% of 7d range (4.145 - 5.963)
+  • [B] last 24h kline volume 2.29x prior 6d daily avg
+  • [B] current 1h candle body 0.28x avg of prior 24
+  • [C] depth ±1% of mid -> bids 224k / asks 272k USDT, imbalance 0.82
+  • [C] spread 1.8 bps
+  • Vetting: N/A (top-20)
+
+RULES CHECKED
+  R001 Never propose more than 20% of sub-account b ...... SKIPPED (balance 0 — not enforceable, orderTest does not check balance)
+  R003 Do not re-propose an idea rejected in the la ...... OK (no rejected proposal for this symbol+side in last 24h)
+  R004 Any restriction on a tool must also cover to ...... OK (tooling rule — enforced in place.py (assert_paper_safe + tool_execute log))
+  R005 Only propose assets that exist as an active ....... OK (enforced at ingest (scripts/ingest.py) — on-chain signals filtered before packets)
+  R006 A signal counts as evidence for a spot pair ....... OK (enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed)
+  R007 Evidence must draw on at least two structura ...... OK (3 independent sources: A,B,C)
+  R008 Every asset outside the top 20 must pass a v ...... OK (N/A — UNI is top-20, vetting not required)
+
+INVALIDATION
+  A 1h close below 5.40 (the floor of the top third of the 7d range), or 24h volume fading back under 1x the 7d average, ends the breakout case.
+
+SIZE REASONING
+  25 USDT default stake: 5x the 5 USDT exchange minimum; at the target 200 USDT funding this is 12.5% of balance, inside R001. Mildly ask-heavy book (0.82) argues against sizing up.
+
+━━━ Pilot: y / n ━━━
+If n, one code please: SIZE / TIMING / CONVICTION / RISK / DUPLICATE / ASSET / OTHER
