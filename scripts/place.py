@@ -307,6 +307,27 @@ def log_fill(proposal, call, response, affordability=None):
     return entry
 
 
+def freshness_check(spot_account, wallet_summary, tolerance=0.01):
+    """Startup check: spot_getAccount vs wallet_queryUserWalletBalance
+    (quoteAsset=USDT) on USDT. Returns (ok, message); a disagreement gets a
+    loud warning — see docs/bug-report-stale-getaccount.md."""
+    acct_usdt = _account_free_usdt(spot_account)
+    wallet_usdt = _wallet_spot_balance(wallet_summary)
+    update_time = int(spot_account.get("updateTime") or 0)
+    if abs(acct_usdt - wallet_usdt) <= tolerance:
+        return True, (f"balance freshness OK: spot_getAccount USDT {acct_usdt} agrees "
+                      f"with wallet summary {wallet_usdt} (updateTime {update_time})")
+    return False, (
+        "\n" + "!" * 72 +
+        f"\n!! BALANCE FRESHNESS WARNING — sources disagree on USDT"
+        f"\n!! spot_getAccount free USDT : {acct_usdt} (updateTime {update_time})"
+        f"\n!! wallet summary Spot USDT  : {wallet_usdt}"
+        f"\n!! spot_getAccount is likely serving a stale snapshot"
+        f"\n!! (docs/bug-report-stale-getaccount.md). Do NOT size trades from"
+        f"\n!! spot_getAccount until it reflects the latest deposit/fill."
+        "\n" + "!" * 72)
+
+
 def place(proposal, invoke):
     """Single entry point: proposal in, order placed via invoke(tool, args),
     fill logged. invoke is the session-side MCP caller. The affordability
@@ -335,6 +356,11 @@ def main(argv):
         entry = log_fill(proposal, build_call(proposal, read_mode()), response, affordability)
         print(json.dumps({"logged": entry["id"], "mode": entry["mode"],
                           "affordability": affordability["status"]}, indent=2))
+    elif cmd == "freshness":
+        ctx = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
+        ok, msg = freshness_check(ctx["spot_account"], ctx.get("wallet_summary"))
+        print(msg)
+        return 0 if ok else 4
     elif cmd == "stake":
         account = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
         balance = usdt_free(account)

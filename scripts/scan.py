@@ -225,6 +225,18 @@ def main(argv):
         floor = int(args[args.index("--floor") + 1])
     if "--top" in args:
         top = int(args[args.index("--top") + 1])
+    # Startup balance freshness check — run at the start of every scan when a
+    # balance context is supplied (the session fetches both MCP endpoints).
+    if "--balance-ctx" in args:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import place
+        ctx = json.loads(Path(args[args.index("--balance-ctx") + 1]).read_text(encoding="utf-8"))
+        ok, msg = place.freshness_check(ctx["spot_account"], ctx.get("wallet_summary"))
+        print(msg, file=sys.stderr)
+    else:
+        print("NOTE: balance freshness check skipped — no --balance-ctx supplied. "
+              "Supply {spot_account, wallet_summary} JSON to compare sources.",
+              file=sys.stderr)
     if len(argv) > 1 and argv[1] == "scan":
         print(json.dumps(scan(floor, top), indent=2, ensure_ascii=False))
         return 0
