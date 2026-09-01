@@ -93,6 +93,29 @@ ratio waits for more data. Not implemented: mapping v1 stands until the
 Pilot decides, and any v2 must fix the imbalance direction defect first or
 it will reward bearish books on BUY drafts.
 
+## Update after scan 4 and scan 5 (2026-09-02, post-fix reality check)
+
+Scan 4 (cap 12, directional C): 22 pairs past floor, 12 deep, tiers 1
+zero-source / 4 one-source / 7 two-source / ZERO three-source -> 0 packets.
+Scan 5 (R011 live): 21 past floor, 12 deep, similar shape; SNDKBUSDT and 67
+other tokenized pairs excluded from the universe entirely.
+
+Directional-C recount over the original three scans: 9 of 10 three-source
+instances survive (run3 ENSO demoted). So the fix costs ~10% of tier-3
+throughput while removing a class of false confluence.
+
+REVISED PROJECTION: the two-day sample now looks like the volatile end of
+the range, not the base rate. With the directional fix, three-source
+confluence appears in bursts (4 instances in run1, 0 in run4/5). A quieter
+tape produces zero-packet scans routinely — run.py status now surfaces this
+as "tape is quiet", by design. Revised estimate at 4 scans/day for 5 days:
+roughly 1-3 packets/day on volatile days, 0-1 on quiet days -> 8-15 decided
+proposals over 5 days, i.e. the under-15 outcome is now the CENTRAL case,
+not the tail. Implications: (a) the 8-decided threshold for confidence v2
+may itself take most of the week to reach; (b) the Sync Rate curve will be
+sparse and must keep printing its denominators; (c) the cap raise to 12
+helped candidate coverage but cannot create confluence that is not there.
+
 ## Decision record (2026-09-02, Pilot)
 
 - The imbalance sign defect is FIXED in scan.py: source C is directional,
