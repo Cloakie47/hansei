@@ -269,6 +269,16 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "chg_pct": row["chg_pct"],
             "triggers": {"A": a_trig, "B": b["triggers"], "C": c["triggers"]},
             "packet_worthy": len(sources_triggering) >= 2,
+            "metrics": {
+                "vol_ratio_7d": row.get("vol_ratio_7d"),
+                "vol_expand": b.get("vol_expand"),
+                "chg_threshold_pct": row.get("chg_threshold_pct"),
+                "range_pos": b.get("range_pos"),
+                "imbalance": c.get("imbalance"),
+                "aligned": c.get("aligned"),
+                "spread_bps": c.get("spread_bps"),
+                "quote_volume": row["quote_volume"],
+            },
             "evidence": [{"source": s, "text": t} for s, t in a_ev + b["evidence"] + c["evidence"]],
         })
     return {

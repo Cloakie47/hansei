@@ -41,7 +41,40 @@ BALANCE_CTX = ROOT / "logs" / "balance-ctx.json"
 BALANCE_MAX_AGE_S = 30 * 60
 SCAN_HISTORY = ROOT / "logs" / "scan-history.jsonl"
 
-MECH_CONFIDENCE = {1: 0.50, 2: 0.57, 3: 0.62}
+MECH_CONFIDENCE = {1: 0.50, 2: 0.57, 3: 0.62}  # v1 mapping (kept behind --v1)
+
+# Mechanical confidence v2 — Pilot-approved 2026-09-02 (option b). R009's 60%
+# floor is untouched; v2 changes only how a draft's confidence is computed:
+#   base 0.62
+#   + volume term: min(0.06, 0.02 * log2(volume multiple))   [log-scaled]
+#   + imbalance term, DIRECTION-ALIGNED only: min(0.06, 0.03 * (imb - 1));
+#     a contra-side book subtracts symmetrically
+#   - spread penalty: min(0.05, spread_bps / 200)
+#   Range position is EXCLUDED from confidence (setup type, not strength).
+# Caps: 0.80 with three triggering sources, 0.72 with two (less available
+# evidence cannot outscore full confluence). Floor of the formula: 0.40.
+# Spec targets verified in code: strong confluence reaches 70%+, three
+# sources never exceed 80%.
+CONF_V2_BASE = 0.62
+CONF_V2_CAP3, CONF_V2_CAP2 = 0.80, 0.72
+
+
+def confidence_v2(n_sources, metrics):
+    import math
+    conf = CONF_V2_BASE
+    vol_mult = max(metrics.get("vol_ratio_7d") or 1.0, metrics.get("vol_expand") or 1.0)
+    conf += min(0.06, 0.02 * math.log2(max(vol_mult, 1.0)))
+    imb = metrics.get("imbalance")
+    if imb:
+        if metrics.get("aligned"):
+            conf += min(0.06, 0.03 * (imb - 1))
+        elif imb < 1:
+            conf -= min(0.06, 0.03 * (1 / imb - 1))
+    spread = metrics.get("spread_bps")
+    if spread is not None:
+        conf -= min(0.05, spread / 200)  # 10 bps -> -0.05 (max penalty)
+    cap = CONF_V2_CAP3 if n_sources >= 3 else CONF_V2_CAP2
+    return round(max(0.40, min(conf, cap)), 3)
 
 BALANCE_INSTRUCTIONS = """\
 BALANCE CONTEXT NEEDED — make these three MCP calls and save each response:
@@ -88,11 +121,14 @@ def load_balance_ctx():
     return ctx, None
 
 
-def mechanical_draft(cand, stake):
+def mechanical_draft(cand, stake, use_v1=False):
     trig = {s: t for s, t in cand["triggers"].items()
             if t and not (s == "C" and t == ["wide-spread"])}
     n = len(trig)
-    conf = MECH_CONFIDENCE.get(n, 0.50)
+    if use_v1 or "metrics" not in cand:
+        conf = MECH_CONFIDENCE.get(n, 0.50)
+    else:
+        conf = confidence_v2(n, cand["metrics"])
     parts = "; ".join(f"{s}:{'+'.join(t)}" for s, t in sorted(trig.items()))
     return {
         "symbol": cand["symbol"], "side": "BUY", "type": "MARKET",
@@ -110,7 +146,8 @@ def mechanical_draft(cand, stake):
     }
 
 
-def cmd_scan():
+def cmd_scan(args=()):
+    use_v1 = "--v1" in args
     ctx, err = load_balance_ctx()
     if ctx is None:
         print(f"CANNOT SCAN: {err}.")
@@ -129,7 +166,7 @@ def cmd_scan():
     for cand in result["candidates"]:
         if not cand["packet_worthy"]:
             continue
-        draft = mechanical_draft(cand, stake)
+        draft = mechanical_draft(cand, stake, use_v1=use_v1)
         pid, text, checks = propose.build_packet(draft, {}, ctx)
         if pid:
             propose.save_pending(pid, draft, checks)
@@ -343,7 +380,7 @@ def main(argv):
         pass
     cmd = argv[1] if len(argv) > 1 else ""
     if cmd == "scan":
-        return cmd_scan()
+        return cmd_scan(argv[2:])
     if cmd == "balance":
         return cmd_balance(argv[2:])
     if cmd == "pending":
