@@ -45,7 +45,11 @@ VOLUME_FLOOR = 15_000_000   # 24h quote volume, USDT; 20m -> 15m 2026-09-02
 TOP_CANDIDATES = 16  # deep-scan cap; 8 -> 12 -> 16 (floor drop widened the pool)
 
 # Candidate thresholds (transparent, tunable; every trigger is reported)
-A_CHG_PCT = 4.0          # |24h change| worth attention
+A_CHG_PCT = 4.0          # sort normalizer + fallback |24h change| threshold
+A_CHG_PCT_MIN = 2.5      # relative-trigger floor: never fire under 2.5%
+A_CHG_VOL_MULT = 1.6     # fire when |chg| >= 1.6x the pair's own 7d avg
+                         # abs daily change — majors trigger on moves that are
+                         # large FOR THEM (fixed 4% was blind to ETH-class vol)
 A_VOL_RATIO = 1.8        # 24h volume >= 1.8x own 7d average
 A_VWAP_DIST = 1.5        # |last vs weightedAvgPrice| in %
 B_RANGE_EDGE = 0.15      # within 15% of 7d low/high
@@ -128,16 +132,24 @@ def source_a(floor=VOLUME_FLOOR):
         daily = get("klines", symbol=r["symbol"], interval="1d", limit=8)
         prior = [float(k[7]) for k in daily[:-1]]  # quote asset volume, prior days
         r["vol_ratio_7d"] = (r["quote_volume"] / (sum(prior) / len(prior))) if prior else None
+        # pair's own volatility -> per-pair change threshold
+        daily_chgs = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[:-1]
+                      if float(k[1])]
+        avg_abs = sum(daily_chgs) / len(daily_chgs) if daily_chgs else None
+        r["chg_threshold_pct"] = (max(A_CHG_PCT_MIN, A_CHG_VOL_MULT * avg_abs)
+                                  if avg_abs is not None else A_CHG_PCT)
     return rows, {"bstocks_excluded_total": len(bstocks),
                   "bstocks_above_floor": r011_floor_passing}
 
 
 def a_evidence(row):
     ev, triggers = [], []
-    if abs(row["chg_pct"]) >= A_CHG_PCT:
+    chg_thr = row.get("chg_threshold_pct", A_CHG_PCT)
+    if abs(row["chg_pct"]) >= chg_thr:
         triggers.append("chg")
     ev.append(("A", f"ticker24hr all-pairs -> {row['symbol']} 24h {row['chg_pct']:+.2f}%, "
-                    f"quote volume {row['quote_volume']/1e6:.1f}m USDT"))
+                    f"quote volume {row['quote_volume']/1e6:.1f}m USDT "
+                    f"(own-volatility trigger threshold {chg_thr:.1f}%)"))
     vr = row.get("vol_ratio_7d")
     if vr is not None:
         if vr >= A_VOL_RATIO:
