@@ -1,0 +1,61 @@
+{
+  "sid": "s30d7",
+  "t_ms": 1785697200000,
+  "days_ago": 30,
+  "seed": 7,
+  "packets": {
+    "r-s30d7-01": {
+      "alias": "SYM-08",
+      "confidence": 0.62,
+      "features": {
+        "chg24_pct": 10.326721120186688,
+        "vol_ratio": 2.317813461712484,
+        "range_pos": 0.920308483290488,
+        "chg_thr": 3.8480046649339053
+      },
+      "outcome": {
+        "chg_6h_pct": -1.7451084082496071,
+        "chg_24h_pct": 2.432575356954003,
+        "max_gain_pct": 3.807509254362773,
+        "max_drawdown_pct": -4.019037546271809
+      }
+    },
+    "r-s30d7-02": {
+      "alias": "SYM-26",
+      "confidence": 0.62,
+      "features": {
+        "chg24_pct": 4.225352112676051,
+        "vol_ratio": 1.5791212537334414,
+        "range_pos": 0.7160493827160497,
+        "chg_thr": 2.5
+      },
+      "outcome": {
+        "chg_6h_pct": -0.7371007371007376,
+        "chg_24h_pct": 1.1056511056511065,
+        "max_gain_pct": 1.228501228501222,
+        "max_drawdown_pct": -1.8427518427518441
+      }
+    },
+    "r-s30d7-03": {
+      "alias": "SYM-32",
+      "confidence": 0.62,
+      "features": {
+        "chg24_pct": 10.559006211180112,
+        "vol_ratio": 1.7389459873284878,
+        "range_pos": 0.7407407407407403,
+        "chg_thr": 6.632151009325522
+      },
+      "outcome": {
+        "chg_6h_pct": -0.22471910112358273,
+        "chg_24h_pct": 3.0337078651685445,
+        "max_gain_pct": 5.730337078651693,
+        "max_drawdown_pct": -2.2471910112359605
+      }
+    }
+  },
+  "mapping": {
+    "r-s30d7-01": "ADAUSDT",
+    "r-s30d7-02": "ARBUSDT",
+    "r-s30d7-03": "ENAUSDT"
+  }
+}

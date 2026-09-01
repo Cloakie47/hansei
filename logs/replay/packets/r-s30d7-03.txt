@@ -1,0 +1,16 @@
+━━━ REPLAY PACKET r-s30d7-03 ━━━  (DRILL — historical, anonymised, not a live proposal)
+
+PROPOSAL   BUY [stake] USDT of SYM-32 (spot, market)
+CONFIDENCE 62%  (2-of-2 available sources; C has no history)
+THESIS     SYM-32 moved +10.56% in its trailing 24h (own-volatility threshold 6.6%), 24h volume 1.74x its prior average, sitting at 74% of its 7-day range.
+
+EVIDENCE
+  • [A] cross-sectional -> 24h +10.56% vs threshold 6.6%; volume 1.74x prior avg (19.6m USDT); triggers: ['chg']
+  • [B] time series -> 74% of 7d range; current candle body 0.62x prior 24 avg; triggers: ['vol-expand']
+  • [C] unavailable in replay (no historical order book)
+
+INVALIDATION
+  The triggering excursion reversing within 24h: change sign flip or
+  volume back under 1x average.
+
+━━━ Pilot: python scripts/replay.py verdict r-s30d7-03 y|n [code] ━━━
