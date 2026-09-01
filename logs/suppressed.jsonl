@@ -5,3 +5,7 @@
 {"ts": "2026-09-01T18:49:26Z","rule": "R009","symbol": "ARBUSDT","side": "BUY","confidence": 0.55,"evidence_sources": ["A","B","C"],"reason": "confidence 55% < 60% floor — suppressed to NO_PROPOSAL"}
 {"ts": "2026-09-01T18:49:26Z","rule": "R009","symbol": "PUMPUSDT","side": "BUY","confidence": 0.48,"evidence_sources": ["A","B","C"],"reason": "confidence 48% < 60% floor — suppressed to NO_PROPOSAL"}
 {"ts": "2026-09-01T18:49:26Z","rule": "R010","symbol": "UNIUSDT","side": "BUY","confidence": 0.61,"evidence_sources": ["A","B","C"],"reason": "duplicate-pending skip — p-20260901-005 already awaits a verdict"}
+{"ts": "2026-09-01T19:10:17Z","rule": "R009","symbol": "ENSOUSDT","side": "BUY","confidence": 0.57,"evidence_sources": ["A","B","C"],"reason": "confidence 57% < 60% floor — suppressed to NO_PROPOSAL"}
+{"ts": "2026-09-01T19:10:17Z","rule": "R009","symbol": "ARBUSDT","side": "BUY","confidence": 0.57,"evidence_sources": ["A","B","C"],"reason": "confidence 57% < 60% floor — suppressed to NO_PROPOSAL"}
+{"ts": "2026-09-01T19:10:17Z","rule": "R009","symbol": "UNIUSDT","side": "BUY","confidence": 0.57,"evidence_sources": ["A","B","C"],"reason": "confidence 57% < 60% floor — suppressed to NO_PROPOSAL"}
+{"ts": "2026-09-01T19:10:17Z","rule": "R009","symbol": "NEARUSDT","side": "BUY","confidence": 0.57,"evidence_sources": ["A","B","C"],"reason": "confidence 57% < 60% floor — suppressed to NO_PROPOSAL"}

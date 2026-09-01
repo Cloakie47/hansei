@@ -1,0 +1,82 @@
+{
+  "fetched_at": 1788289786586,
+  "spot_account": {
+    "makerCommission": 10,
+    "takerCommission": 10,
+    "buyerCommission": 0,
+    "sellerCommission": 0,
+    "commissionRates": {
+      "maker": "0.00100000",
+      "taker": "0.00100000",
+      "buyer": "0.00000000",
+      "seller": "0.00000000"
+    },
+    "canTrade": true,
+    "canWithdraw": true,
+    "canDeposit": true,
+    "brokered": false,
+    "requireSelfTradePrevention": false,
+    "preventSor": false,
+    "updateTime": 1788279320551,
+    "accountType": "SPOT",
+    "balances": [],
+    "permissions": [
+      "TRD_GRP_049"
+    ],
+    "uid": 1273127438
+  },
+  "wallet_summary": [
+    {
+      "activate": true,
+      "balance": "40",
+      "walletName": "Spot"
+    },
+    {
+      "activate": true,
+      "balance": "0",
+      "walletName": "Funding"
+    },
+    {
+      "activate": true,
+      "balance": "0",
+      "walletName": "Cross Margin"
+    },
+    {
+      "activate": true,
+      "balance": "0",
+      "walletName": "Isolated Margin"
+    },
+    {
+      "activate": false,
+      "balance": "0",
+      "walletName": "USDⓈ-M Futures"
+    },
+    {
+      "activate": false,
+      "balance": "0",
+      "walletName": "COIN-M Futures"
+    },
+    {
+      "activate": true,
+      "balance": "0",
+      "walletName": "Earn"
+    },
+    {
+      "activate": false,
+      "balance": "0",
+      "walletName": "Options"
+    },
+    {
+      "activate": false,
+      "balance": "0",
+      "walletName": "Trading Bots"
+    },
+    {
+      "activate": true,
+      "balance": "0",
+      "walletName": "Copy Trading"
+    }
+  ],
+  "last_flow_ms": 1788286561000,
+  "deposits_only_usdt": true
+}
