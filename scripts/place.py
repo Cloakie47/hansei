@@ -4,11 +4,17 @@ The Binance MCP tools are only callable from inside the Claude Code session
 (session OAuth); this script cannot reach the network itself. It owns every
 deterministic step and the session performs exactly one MCP call in between:
 
-  1. python scripts/place.py prepare <proposal.json>
-       -> prints one JSON object: {"mode", "tool", "wrapped_tool", "arguments"}
-       Claude Code then calls that tool with those arguments, verbatim.
-  2. python scripts/place.py record <proposal.json> <response.json>
-       -> appends the fill to logs/fills.jsonl (always, both modes, with "mode")
+  0. Claude Code calls spot_getAccount and saves the response to account.json.
+  1. python scripts/place.py prepare <proposal.json> <account.json>
+       -> runs the affordability pre-flight (R001: max 20% of USDT balance per
+          position) BEFORE emitting any tool call, in both modes. A violation
+          raises and nothing is emitted. Balance 0 -> AFFORDABILITY: SKIPPED
+          (orderTest cannot check balance, so the entry is marked instead).
+       -> prints one JSON object: {"mode", "tool", "wrapped_tool", "arguments",
+          "affordability"}. Claude Code then calls that tool verbatim.
+  2. python scripts/place.py record <proposal.json> <account.json> <response.json>
+       -> appends the fill to logs/fills.jsonl (always, both modes, with "mode"
+          and "affordability")
        -> appends to logs/tool_execute.jsonl whenever the call went through
           tool_execute, with the wrapped toolName (R004)
 
@@ -69,6 +75,46 @@ def read_mode():
     return mode
 
 
+R001_MAX_FRACTION = 0.20
+
+
+def proposal_notional_usdt(proposal):
+    if proposal["type"] == "LIMIT":
+        return proposal["price"] * proposal["quantity"]
+    if "quoteOrderQty" in proposal:
+        return proposal["quoteOrderQty"]
+    return None
+
+
+def usdt_free(account):
+    for bal in account.get("balances", []):
+        if bal.get("asset") == "USDT":
+            return float(bal.get("free", 0))
+    return 0.0
+
+
+def affordability_check(proposal, account):
+    """R001 pre-flight, enforced before any tool call in both modes.
+    Raises on violation. Balance 0 returns SKIPPED (not a failure) so paper
+    fills against an unfunded account are visibly marked in the log."""
+    balance = usdt_free(account)
+    if balance == 0:
+        return {"status": "SKIPPED", "usdt_free": 0.0,
+                "note": "balance 0 — R001 not enforceable, orderTest does not check balance"}
+    notional = proposal_notional_usdt(proposal)
+    if notional is None:
+        raise RuntimeError(
+            "cannot compute USDT notional for this proposal (MARKET by base "
+            "quantity); refuse to place without a checkable notional (R001)")
+    limit = R001_MAX_FRACTION * balance
+    if notional > limit:
+        raise RuntimeError(
+            f"R001 violation: notional {notional:.2f} USDT exceeds 20% of "
+            f"balance ({limit:.2f} of {balance:.2f}). Refusing to call anything.")
+    return {"status": "OK", "usdt_free": balance, "notional_usdt": notional,
+            "fraction_of_balance": round(notional / balance, 4)}
+
+
 def build_order_args(proposal):
     """Identical order arguments for both modes."""
     args = {
@@ -123,11 +169,12 @@ def append_jsonl(path, obj):
         f.write(json.dumps(obj, separators=(",", ": "), ensure_ascii=False) + "\n")
 
 
-def log_fill(proposal, call, response):
+def log_fill(proposal, call, response, affordability=None):
     entry = {
         "id": proposal["id"],
         "ts": now_iso(),
         "mode": call["mode"],
+        "affordability": affordability,
         "symbol": proposal["symbol"],
         "side": proposal["side"],
         "type": proposal["type"],
@@ -148,24 +195,35 @@ def log_fill(proposal, call, response):
 
 def place(proposal, invoke):
     """Single entry point: proposal in, order placed via invoke(tool, args),
-    fill logged. invoke is the session-side MCP caller."""
+    fill logged. invoke is the session-side MCP caller. The affordability
+    pre-flight runs before the order call in both modes."""
+    account = invoke("spot_getAccount", {"omitZeroBalances": True})
+    affordability = affordability_check(proposal, account)  # raises on R001
     call = build_call(proposal, read_mode())
     response = invoke(call["tool"], call["arguments"])
-    return log_fill(proposal, call, response)
+    return log_fill(proposal, call, response, affordability)
 
 
 def main(argv):
     cmd = argv[1] if len(argv) > 1 else ""
     if cmd == "prepare":
         proposal = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
-        print(json.dumps(build_call(proposal, read_mode()), indent=2))
+        account = json.loads(Path(argv[3]).read_text(encoding="utf-8"))
+        affordability = affordability_check(proposal, account)  # raises on R001
+        call = build_call(proposal, read_mode())
+        call["affordability"] = affordability
+        print(json.dumps(call, indent=2))
     elif cmd == "record":
         proposal = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
-        response = json.loads(Path(argv[3]).read_text(encoding="utf-8"))
-        entry = log_fill(proposal, build_call(proposal, read_mode()), response)
-        print(json.dumps({"logged": entry["id"], "mode": entry["mode"]}, indent=2))
+        account = json.loads(Path(argv[3]).read_text(encoding="utf-8"))
+        response = json.loads(Path(argv[4]).read_text(encoding="utf-8"))
+        affordability = affordability_check(proposal, account)
+        entry = log_fill(proposal, build_call(proposal, read_mode()), response, affordability)
+        print(json.dumps({"logged": entry["id"], "mode": entry["mode"],
+                          "affordability": affordability["status"]}, indent=2))
     else:
-        print("usage: place.py prepare <proposal.json> | record <proposal.json> <response.json>")
+        print("usage: place.py prepare <proposal.json> <account.json> | "
+              "record <proposal.json> <account.json> <response.json>")
         return 1
     return 0
 
