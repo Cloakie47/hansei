@@ -415,7 +415,18 @@ def cmd_debrief(args):
         if fills else "- Fills today: 0 | notional 0 USDT | fees 0 USDT — no P&L, stated not omitted",
         f"- Suppressions today: {len(suppressed)} "
         f"(R009: {sum(1 for s in suppressed if s['rule']=='R009')}, "
-        f"R010: {sum(1 for s in suppressed if s['rule']=='R010')})",
+        f"R010: {sum(1 for s in suppressed if s['rule']=='R010')}, "
+        f"R014: {sum(1 for s in suppressed if s['rule']=='R014')})",
+        "- Setup types decided today (inferable only): "
+        + (json.dumps({s: {"n": sum(1 for p in inferable if p.get('setup') == s),
+                           "approved": sum(1 for p in inferable
+                                           if p.get('setup') == s and p['verdict'] == 'APPROVED')}
+                       for s in sorted({p.get('setup') for p in inferable if p.get('setup')})})
+           if any(p.get('setup') for p in inferable) else "none with setup data yet"),
+        "- R:R of decided packets (inferable only): "
+        + (json.dumps([{ 'id': p['id'], 'rr': p.get('rr'), 'verdict': p['verdict']}
+                       for p in inferable if p.get('rr') is not None])
+           if any(p.get('rr') is not None for p in inferable) else "none with R:R data yet"),
         f"- Calibration: {len([p for p in all_dec if p.get('confidence')])} decided packets with "
         "confidence all-time — too few to bucket honestly" if
         len([p for p in all_dec if p.get('confidence')]) < 10 else

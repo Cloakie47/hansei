@@ -514,6 +514,10 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False,
         "invalidation": draft["invalidation"],
         "audit_passed": pending["audit_passed"],
         "vetting_path": pending.get("vetting_path"),
+        "setup": draft.get("setup"),
+        "rr": (round(draft["rr"]["rr"], 2)
+               if isinstance(draft.get("rr"), dict) and draft["rr"].get("rr") is not None
+               else None),
         "verdict": verdict,
         "reject_reason": reason_code,
         "pilot_note": note,
