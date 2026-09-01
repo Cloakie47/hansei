@@ -127,6 +127,33 @@ def load_balance_ctx():
     return ctx, None
 
 
+# R008 auto-vetting for CEX-scan candidates outside the top 20. Rule
+# semantics unchanged: native L1 coins (curated set — no contract exists)
+# take the listing-data path; contract assets take query-token-audit via a
+# curated canonical mainnet address (only addresses we are certain of).
+# Anything not covered stays fail-closed BLOCKED, exactly as R008 says.
+NATIVE_L1_BASES = {"FIL", "DASH", "ZEC", "DCR", "ETC", "ALGO", "XTZ", "EGLD",
+                   "ICP", "HBAR", "APT", "SEI", "TIA", "INJ", "FLOW", "MINA",
+                   "EOS", "KDA", "KAS", "XMR"}
+MAINNET_CONTRACTS = {
+    "CRV": ("0xd533a949740bb3306d119cc777fa900ba034cd52", "1"),
+}
+
+
+def auto_vet(symbol):
+    import re as _re
+    import audit
+    base = _re.sub(r"USDT$", "", symbol)
+    if base in propose.TOP_20_BASES:
+        return None  # R008 N/A
+    if base in NATIVE_L1_BASES:
+        return audit.native_listing_vet(symbol)
+    if base in MAINNET_CONTRACTS:
+        ca, chain = MAINNET_CONTRACTS[base]
+        return audit.vet_asset(contract_address=ca, chain_id=chain)
+    return None  # unknown -> draft carries no vetting -> R008 blocks, fail-closed
+
+
 def mechanical_draft(cand, stake, use_v1=False):
     trig = {s: t for s, t in cand["triggers"].items()
             if t and not (s == "C" and t == ["wide-spread"])}
@@ -174,13 +201,17 @@ def cmd_scan(args=()):
         if not cand["packet_worthy"]:
             continue
         draft = mechanical_draft(cand, stake, use_v1=use_v1)
+        if draft["confidence"] >= propose.CONFIDENCE_FLOOR:
+            vet = auto_vet(draft["symbol"])  # only spend vet calls on floor-clearers
+            if vet is not None:
+                draft["vetting"] = vet
         pid, text, checks = propose.build_packet(draft, {}, ctx)
         if pid:
             propose.save_pending(pid, draft, checks)
             path = propose.save_packet_text(pid, text)
             packets.append(str(path))
         else:
-            skipped.append(text.split(".")[0])
+            skipped.append(text.splitlines()[0][:130])
     for s in skipped:
         print(f"  {s}")
     place.append_jsonl(SCAN_HISTORY, {

@@ -1,0 +1,75 @@
+{
+  "id": "p-20260901-1001",
+  "draft": {
+    "symbol": "CRVUSDT",
+    "side": "BUY",
+    "type": "MARKET",
+    "quoteOrderQty": 8.0,
+    "confidence": 0.624,
+    "evidence": [
+      {
+        "source": "A",
+        "text": "ticker24hr all-pairs -> CRVUSDT 24h +16.16%, quote volume 19.7m USDT (own-volatility trigger threshold 8.0%)"
+      },
+      {
+        "source": "A",
+        "text": "volume vs own 7d avg -> 6.37x"
+      },
+      {
+        "source": "A",
+        "text": "last 0.3731 vs day VWAP -> +4.02%"
+      },
+      {
+        "source": "B",
+        "text": "klines 1h x168 -> price at 95% of 7d range (0.2901 - 0.3776)"
+      },
+      {
+        "source": "B",
+        "text": "last 24h kline volume 7.26x prior 6d daily avg"
+      },
+      {
+        "source": "B",
+        "text": "current 1h candle body 1.20x avg of prior 24"
+      },
+      {
+        "source": "C",
+        "text": "depth ±1% of mid -> bids 101k / asks 78k USDT, imbalance 1.30"
+      },
+      {
+        "source": "C",
+        "text": "spread 2.7 bps"
+      }
+    ],
+    "signals_used": [
+      "spot_ticker24hr(all-pairs)",
+      "spot_klines",
+      "spot_depth"
+    ],
+    "thesis": "CRVUSDT moved +16.16% in 24h with 2 independent source(s) triggering (A:chg+vol+vwap; B:range-edge+vol-expand). Mechanical draft v1 — confidence is the source count mapping, see run.py.",
+    "invalidation": "The triggering excursion reversing: 24h change sign flip, volume ratio back under 1x its 7d average, or the book imbalance crossing back through 1.0 — whichever fired.",
+    "size_reasoning": "8.0 USDT = 20% of live balance (R001 ceiling, 6 USDT floor) via place.default_stake.",
+    "max_hold_hours": 72,
+    "vetting": {
+      "path": "query-token-audit",
+      "verdict": "PASS",
+      "reasons": [],
+      "detail": "riskLevel 1 (LOW), buyTax 0.0, sellTax 0.0"
+    }
+  },
+  "rules_checked": [
+    "R001",
+    "R003",
+    "R004",
+    "R005",
+    "R006",
+    "R007",
+    "R008",
+    "R009",
+    "R010",
+    "R011",
+    "R012",
+    "R013"
+  ],
+  "audit_passed": true,
+  "vetting_path": "query-token-audit"
+}

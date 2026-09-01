@@ -144,7 +144,10 @@ def next_proposal_id(now=None):
     if PENDING_DIR.exists():
         ids += [p.stem for p in PENDING_DIR.glob("p-*.json")]
     for pid in ids:
-        m = re.match(rf"^p-{day}-(\d{{3}})$", pid or "")
+        # \d{3,}: sequences can exceed 999 (they did — test ids 998/999 pushed
+        # the counter past three digits and a \d{3} pattern went blind, which
+        # collided two packets on one id)
+        m = re.match(rf"^p-{day}-(\d{{3,}})$", pid or "")
         if m:
             seqs.append(int(m.group(1)))
     return f"p-{day}-{max(seqs) + 1:03d}"
@@ -376,7 +379,7 @@ def build_packet(draft, market, account):
     print instead of a packet — caller decides exit."""
     # R009 hard floor: suppress to NO_PROPOSAL, log for clustering visibility.
     if draft.get("confidence") is not None and draft["confidence"] < CONFIDENCE_FLOOR:
-        reason = f"confidence {draft['confidence']:.0%} < 60% floor — suppressed to NO_PROPOSAL"
+        reason = f"confidence {draft['confidence']:.1%} < 60.0% floor — suppressed to NO_PROPOSAL"
         log_suppressed("R009", draft, reason)
         return None, (f"NO PACKET (R009): {draft['symbol']} {draft['side']} {reason}. "
                       f"Logged to logs/suppressed.jsonl. Emit the day-level NO_PROPOSAL "
