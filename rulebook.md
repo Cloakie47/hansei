@@ -36,3 +36,8 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   trading universe. They follow external market hours, halt on corporate
   actions, and do not share the continuous-trading assumptions the scanner
   is built on.
+- **R012** Every packet must state a complete exit plan: an invalidation
+  condition AND a time stop. No open-ended positions.
+- **R013** Maximum hold is 72 hours. When an open position ages past 72h,
+  the Unit proposes an exit packet at the next scan; the Pilot decides it
+  like any other proposal.

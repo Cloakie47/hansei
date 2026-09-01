@@ -227,6 +227,27 @@ def _check_r006(draft, ctx):
     return "OK", "enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed"
 
 
+def _check_r011(draft, ctx):
+    return "OK", "enforced at ingest (scan.py TRD_GRP_261 marker) — bstocks never reach drafts"
+
+
+def _check_r012(draft, ctx):
+    if not draft.get("invalidation"):
+        return "BLOCKED", "no invalidation condition — exit plan incomplete"
+    if not draft.get("max_hold_hours"):
+        return "BLOCKED", "no time stop — exit plan incomplete"
+    return "OK", f"invalidation stated + {draft['max_hold_hours']}h time stop"
+
+
+def _check_r013(draft, ctx):
+    hold = draft.get("max_hold_hours")
+    if hold is None:
+        return "BLOCKED", "no max hold on draft"
+    if hold > 72:
+        return "BLOCKED", f"max hold {hold}h exceeds the 72h ceiling"
+    return "OK", f"max hold {hold}h <= 72h"
+
+
 def _check_r008(draft, ctx):
     base = re.sub(r"(USDT|USDC|FDUSD|TUSD|BTC|ETH|BNB)$", "", draft["symbol"])
     if base in TOP_20_BASES:
@@ -272,7 +293,8 @@ def _check_r010(draft, ctx):
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
             "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
             "R007": _check_r007, "R008": _check_r008, "R009": _check_r009,
-            "R010": _check_r010}
+            "R010": _check_r010, "R011": _check_r011, "R012": _check_r012,
+            "R013": _check_r013}
 
 
 def run_rule_checks(draft, rules, ctx):
@@ -332,6 +354,10 @@ def render_packet(pid, draft, checks):
         "",
         "INVALIDATION",
         f"  {draft['invalidation']}",
+        "",
+        "TIME STOP",
+        f"  {draft.get('max_hold_hours', 72)}h maximum hold (R013) — exit proposed at the "
+        "next scan after expiry, whichever of invalidation/time stop comes first.",
         "",
         "SIZE REASONING",
         f"  {draft['size_reasoning']}",

@@ -143,6 +143,7 @@ def mechanical_draft(cand, stake, use_v1=False):
                          "imbalance crossing back through 1.0 — whichever fired."),
         "size_reasoning": (f"{stake} USDT = 20% of live balance (R001 ceiling, "
                            f"6 USDT floor) via place.default_stake."),
+        "max_hold_hours": 72,
     }
 
 
@@ -279,6 +280,46 @@ def cmd_status():
     return 0
 
 
+def cmd_positions():
+    """Open positions from LIVE fills (net BUY-SELL per symbol), with age
+    against the R013 72h ceiling. PAPER and test fills never open positions."""
+    fills = []
+    if place.FILLS_LOG.exists():
+        fills = [json.loads(l) for l in place.FILLS_LOG.read_text(encoding="utf-8").splitlines()
+                 if l.strip()]
+    live = [f for f in fills if f.get("mode") == "LIVE" and f.get("test") is not True]
+    if not live:
+        print("no open positions (no LIVE fills recorded)")
+        return 0
+    from collections import defaultdict
+    net = defaultdict(float)
+    oldest_open = {}
+    for f in live:
+        qty = float(f.get("request", {}).get("quoteOrderQty")
+                    or f.get("request", {}).get("arguments", {}).get("quoteOrderQty") or 0)
+        sym = f["symbol"]
+        if f["side"] == "BUY":
+            net[sym] += qty
+            oldest_open.setdefault(sym, f["ts"])
+        else:
+            net[sym] -= qty
+            if net[sym] <= 0:
+                net[sym] = 0
+                oldest_open.pop(sym, None)
+    open_syms = [s for s, v in net.items() if v > 0]
+    if not open_syms:
+        print("no open positions (all LIVE fills netted flat)")
+        return 0
+    now = datetime.now(timezone.utc)
+    for sym in open_syms:
+        opened = datetime.strptime(oldest_open[sym], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        age_h = (now - opened).total_seconds() / 3600
+        flag = "  << OVER 72h — EXIT PROPOSAL DUE (R013)" if age_h > 72 else \
+               f"  ({72 - age_h:.0f}h until R013 time stop)"
+        print(f"{sym}: ~{net[sym]:.2f} USDT notional, opened {oldest_open[sym]}, age {age_h:.1f}h{flag}")
+    return 0
+
+
 def cmd_debrief(args):
     date = args[args.index("--date") + 1] if "--date" in args else now_utc_date()
     out_dir = Path(args[args.index("--out-dir") + 1]) if "--out-dir" in args else ROOT / "debriefs"
@@ -394,6 +435,8 @@ def main(argv):
     if cmd == "chart":
         import chart
         return chart.main()
+    if cmd == "positions":
+        return cmd_positions()
     print(__doc__)
     return 1
 
