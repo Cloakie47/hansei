@@ -36,9 +36,16 @@ Track B (connect your MCPs and trade).
 3. **Whatever is in the sub-account is the entire loss ceiling.** Binance imposes
    no separate loss cap.
 4. **Desktop only.** Claude Code must be open and the Pilot present.
-5. **Granted scopes:** Market data (read), Account (read), Spot & Margin trading.
-   Master account read, Futures, Margin Loan, and Internal Transfer are all
-   **OFF** on purpose. Changing scopes requires disconnecting and reconnecting.
+5. **Granted scopes (verified 2026-09-01 against the live API key):**
+   - Spot trading: ON
+   - Margin: OFF at key level (enableMargin=false, no borrow/repay tools exist)
+   - Futures: OFF (verified, -2015 rejection on futures_usds_futuresAccountBalanceV3)
+   - Withdrawals: OFF (enableWithdrawals=false)
+   - Internal transfer: OFF
+   - Master account read: NO ENDPOINT EXPOSED (cannot be verified at key level;
+     state it this precise way, never claim it is "disabled")
+
+   Changing scopes requires disconnecting and reconnecting.
 
 ## Connection
 
@@ -56,6 +63,16 @@ Skills in use (install with `npx skills add <url>`):
 - `crypto-market-rank` — sentiment, hype, smart-money inflow rankings
 - `square-post` — publish the nightly Debrief to Binance Square
 - `binance-agentic-wallet` — optional, x402 buyer-side payments (stretch goal only)
+
+## Verified write surface
+
+- Visible write tools: `spot_newOrder`, `spot_deleteOrder`, `spot_deleteOpenOrders`
+- `tool_execute` is a write-capable proxy that reaches HIDDEN spot write tools
+  not in the visible registry: `spot.orderCancelReplace`,
+  `spot.orderAmendKeepPriority`, `spot.deleteOrderList`, `spot.orderOco`,
+  `spot.orderListOco/Oto/Otoco/Opo/Opoco`, `spot.sorOrder`
+- `spot.orderTest` and `spot.sorOrderTest` are VALIDATION ONLY and never reach
+  the matching engine. These are our paper-trading mode.
 
 ## File layout
 
@@ -114,6 +131,10 @@ Deleted rules are struck through, not removed, so the history stays readable.
 - Keep position sizes small. This is a demo account.
 - Do not give the Pilot financial advice. Present evidence, confidence, and
   invalidation conditions. The Pilot decides.
+- ALL reports, summaries, test results and status output must be PLAIN TEXT.
+  No tables. No box-drawing characters. No unicode borders. One fact per line
+  in the form "LABEL: RESULT — detail". Terminal tables get truncated and
+  become unreadable when pasted.
 
 ## Build order (do not skip ahead)
 
