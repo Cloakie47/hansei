@@ -577,11 +577,19 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             dims = compute_dimensions(row.get("_daily") or [],
                                       regime["_btc_closes"], row.get("vwap_dist_pct"))
             vote = setup_vote(setup, dims)
-        _place.append_jsonl(setups_log, {
+        entry = {
             "ts": _place.now_iso(), "symbol": row["symbol"], "setup": setup,
             "detail": setup_detail, "blocked": setup in ("CHASE", "UNCLASSIFIED"),
             "rr": round(rr["rr"], 2) if rr else None,
-            "regime": regime["regime"]})
+            "regime": regime["regime"]}
+        if vote is not None:
+            # R015: named failures are the artifact — "zero packets and here
+            # is exactly why" beats a silent zero.
+            entry["vote_pass"] = vote["pass"]
+            entry["vote_n_pass"] = vote["n_pass"]
+            entry["vote_need"] = vote["need"]
+            entry["vote_failed"] = vote["failed"]
+        _place.append_jsonl(setups_log, entry)
         # A candidate is packet-worthy only when at least TWO structurally
         # different sources show an abnormal reading (R007 in spirit; the
         # hard check runs again in propose.py from the evidence tags) AND the

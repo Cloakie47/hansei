@@ -2,3 +2,5 @@
 {"ts": "2026-09-02T04:51:03Z","symbol": "NEARUSDT","setup": "PULLBACK","n_sources": 2,"rr": 3.13,"v2": 0.57,"v3": 0.57}
 {"ts": "2026-09-02T04:51:03Z","symbol": "PUMPUSDT","setup": "PULLBACK","n_sources": 0,"rr": 4.76,"v2": 0.562,"v3": 0.647}
 {"ts": "2026-09-02T04:51:03Z","symbol": "TRUMPUSDT","setup": "BASING","n_sources": 0,"rr": 3.43,"v2": 0.558,"v3": 0.626}
+{"ts": "2026-09-02T07:47:58Z","symbol": "PUMPUSDT","setup": "PULLBACK","n_sources": 1,"rr": 4.39,"v2": 0.577,"v3": 0.659}
+{"ts": "2026-09-02T07:47:58Z","symbol": "TUTUSDT","setup": "BASING","n_sources": 2,"rr": 13.5,"v2": 0.562,"v3": 0.645}

@@ -366,6 +366,15 @@ def cmd_scan(args=()):
         for sh in shadows:
             print(f"  {sh['symbol']}: {sh['setup']} {sh['n_sources']}-source "
                   f"rr={sh['rr']} v2={sh['v2']:.3f} v3={sh['v3']:.3f}")
+    # R015 vote failures, with the failing dimensions named — the honest
+    # explanation for every classified candidate that produced no packet.
+    for cand in result["candidates"]:
+        v = cand.get("vote")
+        if (cand.get("setup") not in (None, "CHASE", "UNCLASSIFIED")
+                and isinstance(v, dict) and not v["pass"]):
+            print(f"  VOTE FAILED (R015): {cand['symbol']} {cand['setup']} "
+                  f"{v['n_pass']}/4 (need {v['need']}) — failing: "
+                  + "; ".join(v["failed"]))
     for cand in result["candidates"]:
         if not cand["packet_worthy"]:
             continue

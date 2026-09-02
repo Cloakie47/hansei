@@ -55,6 +55,19 @@ Response: identical — `"balances":[]`, `updateTime` 1788279320551.
 - The tool's own doc says "Data Source: Memory => Database"; we observed
   only that the returned snapshot is stale, not why.
 
+## Resolution observed (addendum, 2026-09-02 ~12:15 UTC)
+
+The snapshot eventually unstuck: `spot_getAccount` began returning
+`updateTime` 1788324841401 with USDT `40.00000000`. That updateTime equals
+the deposit's `completeTime` (1788324841000, to the second) which
+`wallet_depositHistory` began reporting at the same moment — the deposit
+showed `status: 1` and `confirmTimes: "1/1"` roughly TWELVE HOURS earlier
+(insertTime 1788286561000) while `wallet_queryUserWalletBalance` already
+counted the funds. Observed conclusion: the account snapshot refreshes on
+deposit "completion", which can lag a confirmed, wallet-visible credit by
+half a day. An agent trusting `spot_getAccount` alone is blind to funds for
+that entire window.
+
 ## Impact
 
 An agent that trusts `spot_getAccount` alone sizes trades against phantom
