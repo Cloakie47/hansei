@@ -76,9 +76,9 @@ def klines_window(symbol, t_ms):
 def daily_structure(symbol, t_ms):
     """Daily-kline structure at T for the setup classifier (same fields the
     live scanner computes)."""
-    start = t_ms - 35 * 86_400_000
+    start = t_ms - 95 * 86_400_000
     daily = get("klines", symbol=symbol, interval="1d",
-                startTime=start, endTime=t_ms, limit=40)
+                startTime=start, endTime=t_ms, limit=100)
     daily = [k for k in daily if k[6] <= t_ms]
     if len(daily) < 25:
         return None
@@ -95,7 +95,19 @@ def daily_structure(symbol, t_ms):
         "avg_abs_daily_pct": avg,
         "consol_high": max(float(k[2]) for k in window),
         "consol_low": min(float(k[3]) for k in window),
+        "_daily": daily,  # for the R015 dimensions
     }
+
+
+_BTC_CACHE = {}
+
+
+def _btc_closes_at(t_ms):
+    if t_ms not in _BTC_CACHE:
+        btc_daily = get("klines", symbol="BTCUSDT", interval="1d",
+                        startTime=t_ms - 95 * 86_400_000, endTime=t_ms, limit=100)
+        _BTC_CACHE[t_ms] = [float(k[4]) for k in btc_daily if k[6] <= t_ms]
+    return _BTC_CACHE[t_ms]
 
 
 def analyse(symbol, t_ms):
@@ -142,7 +154,7 @@ def analyse(symbol, t_ms):
     lo7 = min(float(k[3]) for k in past[-168:])
     hi7 = max(float(k[2]) for k in past[-168:])
     swing_low_48h = min(float(k[3]) for k in past[-48:])
-    setup, setup_detail, rr, v3 = "UNCLASSIFIED", "insufficient daily history", None, None
+    setup, setup_detail, rr, v3, vote = "UNCLASSIFIED", "insufficient daily history", None, None, None
     if ds:
         row = dict(ds, chg_pct=chg24)
         b_like = {"range_pos": range_pos, "last": last, "vol_expand": vol_ratio,
@@ -151,6 +163,14 @@ def analyse(symbol, t_ms):
         setup, setup_detail = scanmod.classify_setup(row, b_like)
         if setup not in ("CHASE", "UNCLASSIFIED"):
             rr = scanmod.risk_reward(row, b_like, setup)
+            # R015 vote at T (final spec) — VWAP proxied from the last 24 1h
+            # candles' quote/base volume at T
+            base_vol24 = sum(float(k[5]) for k in past[-24:])
+            vwap24 = (vol24 / base_vol24) if base_vol24 else last
+            vwap_dist = (last - vwap24) / vwap24 * 100
+            btc_closes = _btc_closes_at(t_ms)
+            dims = scanmod.compute_dimensions(ds["_daily"], btc_closes, vwap_dist)
+            vote = scanmod.setup_vote(setup, dims)
             import run as runmod
             n_avail = (1 if a_trig else 0) + (1 if b_trig else 0)
             metrics = {"vol_ratio_7d": vol_ratio, "vol_expand": vol_ratio,
@@ -158,13 +178,14 @@ def analyse(symbol, t_ms):
                        "chg24": chg24}
             structure = dict(ds, last=last, range_pos=range_pos, vol_expand=vol_ratio,
                              body_ratio=body_ratio)
+            structure.pop("_daily", None)
             v3 = runmod.confidence_v3(setup, n_avail, metrics, structure,
                                       rr["rr"] if rr else None)
     return {"symbol": symbol, "last": last, "chg24_pct": chg24, "chg_thr": chg_thr,
             "vol_ratio": vol_ratio, "range_pos": range_pos, "body_ratio": body_ratio,
             "a_trig": a_trig, "b_trig": b_trig, "vol24_usdt": vol24,
             "setup": setup, "setup_detail": setup_detail,
-            "rr": rr, "v3": v3,
+            "rr": rr, "v3": v3, "vote": vote,
             "outcome": outcome}
 
 
@@ -237,7 +258,8 @@ def cmd_new(args):
         # sources triggering, structural R:R >= 2 (R014), v3 conf >= floor.
         if f.get("setup") in ("CHASE", "UNCLASSIFIED"):
             continue
-        if not (f["a_trig"] and f["b_trig"]):
+        # Final spec: the R015 vote replaces the source-trigger gate
+        if not (f.get("vote") and f["vote"]["pass"]):
             continue
         if not f.get("rr") or f["rr"]["rr"] < 2.0:
             continue

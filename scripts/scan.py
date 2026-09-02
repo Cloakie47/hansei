@@ -360,6 +360,12 @@ def risk_reward(row, b, setup):
         target = b["hi_7d"]
     if entry <= stop or target <= entry:
         return None
+    # A stop closer than half the pair's average daily move is noise, not
+    # structure — it produces degenerate ratios (a 268:1 was observed) and
+    # would be swept immediately. No structural stop = blocked, not estimated.
+    avg = row.get("avg_abs_daily_pct")
+    if avg and (entry - stop) < entry * (0.5 * avg / 100):
+        return None
     return {"entry": entry, "stop": stop, "target": target,
             "rr": (target - entry) / (entry - stop)}
 
