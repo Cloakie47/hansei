@@ -87,6 +87,32 @@ BOTH, in measured proportions — but the tape carries most of it:
 
 So: mostly tape — wait; one narrow-but-real derivation gap — your call.
 
+## Post-fix update (18:5x UTC) — setup-aware stops shipped and verified
+
+The Pilot approved the drafted derivation (all five choices as-is); it
+shipped as the LAST gate change before hard freeze. First scan under it:
+
+- 25 past floor, 16 deep, 4 classified — and ZERO "no derivable stop"
+  refusals. Every classified candidate now carries a structural stop with
+  its basis, or an honest low ratio:
+    PEPE BASING rr 5.29 (5-day base floor — previously REFUSED)
+    TRUMP PULLBACK rr 6.75 (prior higher-low fractal — previously REFUSED)
+    UNI BREAKOUT rr 0.86 (unchanged derivation, honest low ratio)
+    PUMP PULLBACK rr 0.68 (prior higher-low far below — honest structure;
+      the old derivation refused it, the new one prices it and R014/R009
+      still say no)
+- Funnel outcome: PUMP passed its vote (the day's only vote-passer) and
+  died at R009 at 55.6% — the gates moved from "cannot price this" to
+  "priced it, and it does not pay". Zero packets, all reasons named.
+- Refusal logging and STOP BASIS packet rendering verified in code paths;
+  suppression entries now carry the computed rr (PUMP logged at 0.681).
+
+Section 3's structural finding is RESOLVED: the derivation no longer takes
+stops from the leg being bought, the two previously-refused setup types
+price cleanly, and the degenerate guard still refuses bases too fresh to
+define risk. Throughput matches the draft's estimate (~0-1/day, well under
+the looseness ceiling).
+
 ## 5. UTC days for the video
 
 Logs began 2026-09-01 UTC. The deadline is 2026-09-08 23:59 UTC. Running
