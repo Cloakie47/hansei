@@ -4,3 +4,7 @@
 {"ts": "2026-09-02T04:51:03Z","symbol": "TRUMPUSDT","setup": "BASING","n_sources": 0,"rr": 3.43,"v2": 0.558,"v3": 0.626}
 {"ts": "2026-09-02T07:47:58Z","symbol": "PUMPUSDT","setup": "PULLBACK","n_sources": 1,"rr": 4.39,"v2": 0.577,"v3": 0.659}
 {"ts": "2026-09-02T07:47:58Z","symbol": "TUTUSDT","setup": "BASING","n_sources": 2,"rr": 13.5,"v2": 0.562,"v3": 0.645}
+{"ts": "2026-09-02T16:49:34Z","symbol": "UNIUSDT","setup": "BREAKOUT","n_sources": 1,"rr": 0.73,"v2": 0.601,"v3": 0.587}
+{"ts": "2026-09-02T16:49:34Z","symbol": "PUMPUSDT","setup": "PULLBACK","n_sources": 3,"rr": null,"v2": 0.63,"v3": 0.714}
+{"ts": "2026-09-02T16:49:34Z","symbol": "PEPEUSDT","setup": "BASING","n_sources": 1,"rr": null,"v2": 0.53,"v3": 0.578}
+{"ts": "2026-09-02T16:49:34Z","symbol": "TRUMPUSDT","setup": "PULLBACK","n_sources": 2,"rr": null,"v2": 0.557,"v3": 0.633}
