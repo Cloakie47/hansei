@@ -86,6 +86,12 @@ payload-size reasons (the full-ticker response is 1.5MB and a scan is ~30
 calls); all authenticated actions — account state, order validation, order
 placement — go through the Binance MCP server.
 
+A note on identifiers: the agentic sub-account referenced throughout (uid,
+deposit address, transaction ids in the bug reports) is a PUBLIC DEMO
+ACCOUNT holding a small balance with no withdrawal permission — the
+identifiers are published deliberately so the bug reports and logs are
+verifiable, and they authorize nothing.
+
 ## Bugs found and reported along the way
 
 - [Windows CLI break in the binance-web3 skill CLIs](docs/bug-report-windows-cli.md)
