@@ -48,6 +48,22 @@ VOLUME_FLOOR = 15_000_000   # 24h quote volume, USDT; 20m -> 15m 2026-09-02
 TOP_CANDIDATES = 16  # deep-scan cap; 8 -> 12 -> 16 (floor drop widened the pool)
 
 # Candidate thresholds (transparent, tunable; every trigger is reported)
+# Ceiling on volatility used for THRESHOLD SCALING (2026-09-02 correctness
+# fix): a 26.8%-daily meme asset turned the pullback support zone into a
+# meaningless 40%-wide band and made the chase guard require a 54% day to
+# fire. Cap chosen at 8.0%: the measured high end of legitimately
+# swing-tradeable pairs in our pool (recent scans: 3.8-8.6% avg daily
+# moves); above it, scaled thresholds stop meaning anything. The RAW value
+# is kept separately for reachability math (risk_reward), where real
+# volatility is the point.
+AVG_DAILY_CAP = 8.0
+# R:R reachability (2026-09-02): a target must be reachable inside the R013
+# 72h hold — capped at 3.0x the pair's RAW average daily move (three full
+# average days of directional travel = a generous full-trend bound). A 23:1
+# or 268:1 R:R is always an artifact of a fantasy target or hair-width
+# stop, never a signal.
+TARGET_TRAVEL_MULT = 3.0
+
 A_CHG_PCT = 4.0          # sort normalizer + fallback |24h change| threshold
 A_CHG_PCT_MIN = 2.5      # relative-trigger floor: never fire under 2.5%
 A_CHG_VOL_MULT = 1.6     # fire when |chg| >= 1.6x the pair's own 7d avg
@@ -141,7 +157,9 @@ def source_a(floor=VOLUME_FLOOR):
         closes = [float(k[4]) for k in daily]
         daily_chgs_all = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[-15:-1]
                          if float(k[1])]
-        avg = (sum(daily_chgs_all) / len(daily_chgs_all)) if daily_chgs_all else A_CHG_PCT
+        avg_raw = (sum(daily_chgs_all) / len(daily_chgs_all)) if daily_chgs_all else A_CHG_PCT
+        r["avg_abs_daily_raw_pct"] = avg_raw
+        avg = min(avg_raw, AVG_DAILY_CAP)  # capped for all threshold scaling
         r["ret_7d_pct"] = (closes[-1] / closes[-8] - 1) * 100 if len(closes) >= 8 else 0.0
         r["ret_14d_pct"] = (closes[-1] / closes[-15] - 1) * 100 if len(closes) >= 15 else 0.0
         import math
@@ -156,10 +174,11 @@ def source_a(floor=VOLUME_FLOOR):
         # pair's own volatility -> per-pair change threshold
         daily_chgs = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[-8:-1]
                       if float(k[1])]
-        avg_abs = sum(daily_chgs) / len(daily_chgs) if daily_chgs else None
+        avg_abs = (min(sum(daily_chgs) / len(daily_chgs), AVG_DAILY_CAP)
+                   if daily_chgs else None)  # capped: thresholds only
         r["chg_threshold_pct"] = (max(A_CHG_PCT_MIN, A_CHG_VOL_MULT * avg_abs)
                                   if avg_abs is not None else A_CHG_PCT)
-        # daily-structure aggregates for the setup classifier
+        # daily-structure aggregates for the setup classifier (capped)
         r["avg_abs_daily_pct"] = avg_abs
         if len(closes) >= 25:
             sma20 = sum(closes[-20:]) / 20
@@ -392,7 +411,7 @@ def compute_dimensions(daily, btc_closes, vwap_dist_pct):
     qv = [float(k[7]) for k in daily]
     c = closes[-1]
     chgs = [abs(closes[i] / closes[i - 1] - 1) * 100 for i in range(-14, 0)]
-    avg = sum(chgs) / len(chgs)
+    avg = min(sum(chgs) / len(chgs), AVG_DAILY_CAP)  # capped: thresholds only
     # TREND — structure primary, SMA confirmation
     hh = max(highs[-10:]) > max(highs[-20:-10])
     hl = min(lows[-10:]) > min(lows[-20:-10])
