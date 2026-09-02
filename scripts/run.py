@@ -395,6 +395,7 @@ def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
         "setup": cand.get("setup"),
         "setup_detail": cand.get("setup_detail"),
         "rr": cand.get("rr"),
+        "rr_refusal": cand.get("rr_refusal"),
         "vote": cand.get("vote"),
         "market_regime": cand.get("regime"),
     }

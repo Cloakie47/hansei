@@ -165,7 +165,7 @@ def analyse(symbol, t_ms):
                   "swing_low_48h": swing_low_48h}
         setup, setup_detail = scanmod.classify_setup(row, b_like)
         if setup not in ("CHASE", "UNCLASSIFIED"):
-            rr = scanmod.risk_reward(row, b_like, setup)
+            rr, _rr_refusal = scanmod.risk_reward(row, b_like, setup)
             # R015 vote at T (final spec) — VWAP proxied from the last 24 1h
             # candles' quote/base volume at T
             base_vol24 = sum(float(k[5]) for k in past[-24:])

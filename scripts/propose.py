@@ -386,6 +386,8 @@ def render_packet(pid, draft, checks):
     if rr:
         lines.append(f"R:R        {rr['rr']:.1f} : 1 (target {rr['target']:g}, "
                      f"stop {rr['stop']:g}, entry ref {rr['entry']:g})")
+        if rr.get("stop_basis"):
+            lines.append(f"STOP BASIS {rr['stop_basis']}")
     reg = draft.get("market_regime")
     if reg:
         lines.append(f"REGIME     BTC {reg['regime']}, 24h {reg['btc_chg24_pct']:+.2f}% "
@@ -475,7 +477,8 @@ def build_packet(draft, market, account):
     # R014: structural reward-to-risk gate. No structure = blocked, not estimated.
     rr = draft.get("rr")
     if not rr or rr.get("rr") is None:
-        reason = "R014: no structural target/stop could be derived — blocked, not estimated"
+        reason = (draft.get("rr_refusal")
+                  or "R014: no structural target/stop could be derived — blocked, not estimated")
         log_suppressed("R014", draft, reason)
         return None, (f"NO PACKET (R014): {draft['symbol']} {draft['side']} {reason}. "
                       f"Logged to logs/suppressed.jsonl."), None

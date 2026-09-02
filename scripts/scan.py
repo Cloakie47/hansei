@@ -389,38 +389,92 @@ def classify_setup(row, b):
                             f"range {rp:.0%}, trend_up={trend_up} — blocked fail-closed")
 
 
-def risk_reward(row, b, setup):
-    """Structural target/stop from actual swing levels, not fixed percents.
-    Long-only: stop = 48h swing low; target = 7d swing high for PULLBACK and
-    BREAKOUT (breakouts use the range top as first objective), 7d range mid
-    for REVERSAL. Returns None when entry <= stop (broken structure)."""
+def derive_stop(row, b, setup):
+    """Setup-aware structural stop (Pilot-approved 2026-09-02, all five
+    drafted choices as-is). Returns (stop, basis_text) on success or
+    (None, refusal_reason) — fail-closed, never estimated.
+
+    PULLBACK: below the PRIOR higher-low — the most recent daily fractal
+    swing low below entry and outside the current leg (last 3 bars are the
+    retrace itself). BASING: below the 5-day base floor (the classifier's
+    own horizon). BREAKOUT: unchanged 48h swing low (zero failures — the
+    pre-break consolidation is the right structure). REVERSAL: 48h
+    capitulation low with the buffer (amendment). All stops carry a
+    0.25x-avg-daily-move buffer so a wick-sweep does not tag the tick."""
+    from datetime import datetime, timezone
     entry = b["last"]
-    stop = b["swing_low_48h"]
+    avg = row.get("avg_abs_daily_pct") or A_CHG_PCT
+    buffer = entry * 0.25 * avg / 100
+    daily = row.get("_daily") or []
+
+    def bar_date(k):
+        return datetime.fromtimestamp(k[0] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+
+    if setup == "PULLBACK":
+        if len(daily) < 10:
+            return None, "no qualifying fractal — under 10 daily bars of structure"
+        lows = [float(k[3]) for k in daily]
+        swings = [(i, lows[i]) for i in range(2, len(lows) - 2)
+                  if lows[i] < min(lows[i-1], lows[i-2])
+                  and lows[i] < min(lows[i+1], lows[i+2])]
+        elig = [(i, v) for i, v in swings if i < len(daily) - 3 and v < entry]
+        if not elig:
+            return None, ("no qualifying fractal swing low below entry outside "
+                          "the current leg (last 3 bars excluded)")
+        i, prior_low = elig[-1]
+        cur_leg_low = min(lows[-3:])
+        if prior_low > cur_leg_low:
+            return None, (f"prior higher-low {prior_low:g} ({bar_date(daily[i])}) already "
+                          f"broken by the current leg's low {cur_leg_low:g} — "
+                          f"uptrend structure failed")
+        return prior_low - buffer, (f"prior higher-low {prior_low:g} — daily fractal of "
+                                    f"{bar_date(daily[i])} ({len(daily)-1-i} bars back), "
+                                    f"minus 0.25x-avg buffer; the level whose loss breaks "
+                                    f"the uptrend the pullback thesis buys")
+    if setup == "BASING":
+        if len(daily) < 5:
+            return None, "fewer than 5 daily bars for the basing window"
+        floor_ = min(float(k[3]) for k in daily[-5:])
+        return floor_ - buffer, (f"base floor {floor_:g} — 5-day low "
+                                 f"({bar_date(daily[-5])} to {bar_date(daily[-1])}), minus "
+                                 f"0.25x-avg buffer; below the floor the base has failed")
+    stop48 = b["swing_low_48h"]
+    if setup == "REVERSAL":
+        return stop48 - buffer, (f"capitulation low {stop48:g} (48h swing low) minus "
+                                 f"0.25x-avg buffer; below it the reversal is dead")
+    return stop48, f"48h swing low {stop48:g} — the pre-break consolidation zone"
+
+
+def risk_reward(row, b, setup):
+    """Structural R:R. Returns (rr_dict, None) on success or
+    (None, refusal_reason) — every refusal states its specific cause."""
+    entry = b["last"]
+    stop, basis = derive_stop(row, b, setup)
+    if stop is None:
+        return None, f"R014 stop refusal ({setup}): {basis}"
     if setup in ("REVERSAL", "BASING"):
         target = (b["hi_7d"] + b["lo_7d"]) / 2  # conservative: range mid first
     else:
         target = b["hi_7d"]
-    # 72h reachability (2026-09-02): the target cannot exceed what the pair
-    # plausibly travels inside the R013 hold — 3x its RAW average daily
-    # move. Uses RAW volatility (reachability is about reality, not
-    # thresholds); the cap is recorded when it binds.
+    # 72h reachability: target capped at 3x RAW avg daily move of travel
     avg_raw = row.get("avg_abs_daily_raw_pct") or row.get("avg_abs_daily_pct")
     capped = False
     if avg_raw:
         travel_cap = entry * (1 + TARGET_TRAVEL_MULT * avg_raw / 100)
         if target > travel_cap:
             target, capped = travel_cap, True
-    if entry <= stop or target <= entry:
-        return None
-    # A stop closer than half the pair's average daily move is noise, not
-    # structure — it produces degenerate ratios (a 268:1 was observed) and
-    # would be swept immediately. No structural stop = blocked, not estimated.
+    if target <= entry:
+        return None, f"R014 stop refusal ({setup}): no upside — target {target:g} <= entry {entry:g}"
+    if entry <= stop:
+        return None, f"R014 stop refusal ({setup}): derived stop {stop:g} at/above entry {entry:g}"
+    # degenerate guard (kept): a stop within half an average day is noise
     avg = row.get("avg_abs_daily_pct")
     if avg and (entry - stop) < entry * (0.5 * avg / 100):
-        return None
+        return None, (f"R014 stop refusal ({setup}): degenerate guard — buffered stop "
+                      f"{stop:g} within 0.5x avg daily move of entry {entry:g}")
     return {"entry": entry, "stop": stop, "target": target,
-            "target_capped_72h": capped,
-            "rr": (target - entry) / (entry - stop)}
+            "target_capped_72h": capped, "stop_basis": basis,
+            "rr": (target - entry) / (entry - stop)}, None
 
 
 # ---------------------------------------------------------------------------
@@ -662,7 +716,8 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
         # caller's intent, never from inside source_c.
         c = source_c(row["symbol"], side=SCAN_SIDE)
         setup, setup_detail = classify_setup(row, b)
-        rr = risk_reward(row, b, setup) if setup not in ("CHASE", "UNCLASSIFIED") else None
+        rr, rr_refusal = (risk_reward(row, b, setup)
+                          if setup not in ("CHASE", "UNCLASSIFIED") else (None, None))
         # R015 indicator vote (supersedes R007's source-count gate)
         vote = None
         if setup not in ("CHASE", "UNCLASSIFIED"):
@@ -674,6 +729,8 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "detail": setup_detail, "blocked": setup in ("CHASE", "UNCLASSIFIED"),
             "rr": round(rr["rr"], 2) if rr else None,
             "regime": regime["regime"]}
+        if rr_refusal:
+            entry["rr_refusal"] = rr_refusal  # every refusal states its cause
         if vote is not None:
             # R015: named failures are the artifact — "zero packets and here
             # is exactly why" beats a silent zero.
@@ -706,7 +763,9 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
                 "last": b["last"], "range_pos": b["range_pos"],
                 "vol_expand": b["vol_expand"], "body_ratio": b["body_ratio"],
             },
-            "rr": ({k: round(v, 6) for k, v in rr.items()} if rr else None),
+            "rr": ({k: (round(v, 6) if isinstance(v, float) else v)
+                    for k, v in rr.items()} if rr else None),
+            "rr_refusal": rr_refusal,
             "regime": regime_pub,
             # R015 (2026-09-02): the indicator vote replaces the old
             # two-triggering-sources gate. Triggers are still computed for
