@@ -288,7 +288,7 @@ def append_jsonl(path, obj):
         f.write(json.dumps(obj, separators=(",", ": "), ensure_ascii=False) + "\n")
 
 
-def log_fill(proposal, call, response, affordability=None):
+def log_fill(proposal, call, response, affordability=None, test=False):
     entry = {
         "id": proposal["id"],
         "ts": now_iso(),
@@ -302,6 +302,8 @@ def log_fill(proposal, call, response, affordability=None):
         "request": call["arguments"],
         "response": response,
     }
+    if test:
+        entry["test"] = True  # pipeline drill — excluded from all metrics
     append_jsonl(FILLS_LOG, entry)
     if call["tool"] == "tool_execute":
         append_jsonl(TOOL_EXECUTE_LOG, {
@@ -354,11 +356,14 @@ def main(argv):
         call["affordability"] = affordability
         print(json.dumps(call, indent=2))
     elif cmd == "record":
-        proposal = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
-        account = json.loads(Path(argv[3]).read_text(encoding="utf-8"))
-        response = json.loads(Path(argv[4]).read_text(encoding="utf-8"))
+        test = "--test" in argv
+        args = [a for a in argv if a != "--test"]
+        proposal = json.loads(Path(args[2]).read_text(encoding="utf-8"))
+        account = json.loads(Path(args[3]).read_text(encoding="utf-8"))
+        response = json.loads(Path(args[4]).read_text(encoding="utf-8"))
         affordability = affordability_check(proposal, account)
-        entry = log_fill(proposal, build_call(proposal, read_mode()), response, affordability)
+        entry = log_fill(proposal, build_call(proposal, read_mode()), response,
+                         affordability, test=test)
         print(json.dumps({"logged": entry["id"], "mode": entry["mode"],
                           "affordability": affordability["status"]}, indent=2))
     elif cmd == "freshness":

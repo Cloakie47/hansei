@@ -271,6 +271,65 @@ def exit_draft(symbol, base_qty, opened_ts, reason):
     }
 
 
+def _open_positions(include_test=False):
+    """Open positions from LIVE fills: (symbol -> {qty, opened_ts, age_h}).
+    Uses executedQty from the fill response. PAPER fills never open
+    positions (orderTest touches no matching engine)."""
+    fills = []
+    if place.FILLS_LOG.exists():
+        fills = [json.loads(l) for l in place.FILLS_LOG.read_text(encoding="utf-8").splitlines()
+                 if l.strip()]
+    live = [f for f in fills if f.get("mode") == "LIVE"
+            and (include_test or f.get("test") is not True)]
+    net, opened = {}, {}
+    for f in live:
+        qty = float(f.get("response", {}).get("executedQty") or 0)
+        sym = f["symbol"]
+        if f["side"] == "BUY":
+            net[sym] = net.get(sym, 0) + qty
+            opened.setdefault(sym, f["ts"])
+        else:
+            net[sym] = net.get(sym, 0) - qty
+            if net.get(sym, 0) <= 1e-12:
+                net[sym] = 0
+                opened.pop(sym, None)
+    now = datetime.now(timezone.utc)
+    out = {}
+    for sym, qty in net.items():
+        if qty > 0 and sym in opened:
+            ts = datetime.strptime(opened[sym], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+            out[sym] = {"qty": qty, "opened_ts": opened[sym],
+                        "age_h": (now - ts).total_seconds() / 3600}
+    return out
+
+
+def check_time_stops(include_test=False):
+    """R013 mechanism: any open position aged past 72h gets an exit packet
+    PROPOSED at the next scan — the system never silently holds. The packet
+    goes to the Pilot like any other; R010 stops duplicates while one is
+    pending. Returns generated packet ids."""
+    generated = []
+    for sym, pos in _open_positions(include_test=include_test).items():
+        if pos["age_h"] <= 72:
+            continue
+        if propose.pending_clash(sym, "SELL"):
+            print(f"R013: {sym} aged {pos['age_h']:.1f}h — exit already pending, not duplicated")
+            continue
+        draft = exit_draft(sym, pos["qty"], pos["opened_ts"],
+                           f"R013 time stop: position age {pos['age_h']:.1f}h exceeds the 72h maximum hold")
+        ctx, _ = load_balance_ctx()
+        pid, text, checks = propose.build_packet(draft, {}, ctx or {"balances": []})
+        if pid:
+            propose.save_pending(pid, draft, checks)
+            propose.save_packet_text(pid, text)
+            generated.append(pid)
+            print(f"R013 TIME STOP: exit packet {pid} proposed for {sym} "
+                  f"(age {pos['age_h']:.1f}h) -> packets/{pid}.txt — Pilot decides")
+        else:
+            print(f"R013: {sym} exit draft blocked: {text.splitlines()[0][:120]}")
+    return generated
+
+
 def cmd_exit(args):
     if not args:
         print("usage: run.py exit <SYMBOL> [--qty N --opened TS] --reason \"...\"")
@@ -402,6 +461,8 @@ def cmd_scan(args=()):
         "packets": len(packets),
         "suppressed": len(skipped),
     })
+    # R013: never silently hold — aged positions get exit packets proposed
+    check_time_stops()
     if packets:
         print("PACKETS GENERATED:")
         for p in packets:
