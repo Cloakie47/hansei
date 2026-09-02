@@ -264,8 +264,19 @@ def source_c(symbol, side="BUY"):
 EXTENDED_MULT = 2.0     # |24h chg| >= 2x own avg daily move = extended
 EXTENDED_3D_MULT = 3.0  # or 3d chg >= 3x
 NEAR_HIGHS = 0.70       # range position counted as "near range highs"
-SUPPORT_ZONE_PCT = 4.0  # within 4% of the 20d mean = "support zone" (approx)
+# Support zone is PER-PAIR (Pilot-approved 2026-09-02): within 1.5x the
+# pair's own average daily move of the SMA20 — the same volatility-relative
+# pattern as the A trigger. Replaced a fixed 4% that was provably too tight
+# for a universe averaging 4-8% daily moves (and it tightens for quiet
+# majors, so this is scaling, not loosening).
+SUPPORT_ZONE_MULT = 1.5
 DECLINE_5D_MULT = 2.5   # 5d decline >= 2.5x own avg = "extended decline"
+# BASING (Pilot-approved 2026-09-02): accumulation at the lows on QUIET
+# volume — the reversal that has not announced itself yet.
+BASING_RANGE_MAX = 0.25    # bottom quarter of the 7d range
+BASING_DECLINE_MULT = 2.0  # got here via a decline >= 2x own avg (5d)
+BASING_VOL_MAX = 0.8       # volume CONTRACTED vs prior days (quiet, not capitulation)
+BASING_CALM_MULT = 1.0     # today's move within 1x own avg — no longer knifing
 
 
 def classify_setup(row, b):
@@ -280,10 +291,12 @@ def classify_setup(row, b):
         return "CHASE", (f"extended ({chg24:+.1f}% 24h / {chg3:+.1f}% 3d vs avg "
                          f"{avg:.1f}%) and at {rp:.0%} of range — blocked")
     trend_up = last > sma20 and row.get("sma20_rising")
-    near_support = abs(last - sma20) / sma20 * 100 <= SUPPORT_ZONE_PCT
+    zone_pct = SUPPORT_ZONE_MULT * avg  # per-pair, volatility-scaled
+    near_support = abs(last - sma20) / sma20 * 100 <= zone_pct
     if trend_up and chg24 < 0 and near_support and rp < NEAR_HIGHS:
         return "PULLBACK", (f"uptrend (close>{sma20:.4g}, SMA20 rising), retraced "
-                            f"{chg24:+.1f}% to within {SUPPORT_ZONE_PCT:.0f}% of the 20d mean")
+                            f"{chg24:+.1f}% to within {zone_pct:.1f}% of the 20d mean "
+                            f"(1.5x own {avg:.1f}% avg daily move)")
     consol_high = row.get("consol_high")
     # A breakout must be an UPWARD move: an asset down on the day that merely
     # sits above an old consolidation is not breaking out (0G defect,
