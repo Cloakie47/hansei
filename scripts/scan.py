@@ -57,6 +57,9 @@ TOP_CANDIDATES = 16  # deep-scan cap; 8 -> 12 -> 16 (floor drop widened the pool
 # is kept separately for reachability math (risk_reward), where real
 # volatility is the point.
 AVG_DAILY_CAP = 8.0
+# R016 (Pilot-approved 2026-09-02): raw average daily move above this and
+# the pair leaves the universe — not swing-tradeable on a 72h clock.
+MAX_AVG_DAILY_PCT = 12.0
 # R:R reachability (2026-09-02): a target must be reachable inside the R013
 # 72h hold — capped at 3.0x the pair's RAW average daily move (three full
 # average days of directional travel = a generous full-trend bound). A 23:1
@@ -159,12 +162,21 @@ def source_a(floor=VOLUME_FLOOR):
                          if float(k[1])]
         avg_raw = (sum(daily_chgs_all) / len(daily_chgs_all)) if daily_chgs_all else A_CHG_PCT
         r["avg_abs_daily_raw_pct"] = avg_raw
+        r["_r016_excluded"] = avg_raw > MAX_AVG_DAILY_PCT
         avg = min(avg_raw, AVG_DAILY_CAP)  # capped for all threshold scaling
         r["ret_7d_pct"] = (closes[-1] / closes[-8] - 1) * 100 if len(closes) >= 8 else 0.0
         r["ret_14d_pct"] = (closes[-1] / closes[-15] - 1) * 100 if len(closes) >= 15 else 0.0
         import math
         r["rank_score"] = max(abs(r["ret_7d_pct"]) / (avg * math.sqrt(7)),
                               abs(r["ret_14d_pct"]) / (avg * math.sqrt(14))) if avg else 0.0
+    # R016: ultra-volatile pairs leave the universe entirely, each logged
+    r016_excluded = [r for r in rows if r.get("_r016_excluded")]
+    rows = [r for r in rows if not r.get("_r016_excluded")]
+    for ex in r016_excluded:
+        _log_discard_simple(ex["symbol"],
+                            f"R016: raw avg daily move {ex['avg_abs_daily_raw_pct']:.1f}% "
+                            f"> {MAX_AVG_DAILY_PCT:.0f}% — not swing-tradeable on the "
+                            f"72h clock, excluded from universe")
     rows.sort(key=lambda r: r["rank_score"], reverse=True)
     for r in rows[:TOP_CANDIDATES * 3]:
         daily = r["_daily"]  # kept on the row: the indicator vote needs it
@@ -193,7 +205,18 @@ def source_a(floor=VOLUME_FLOOR):
             r["consol_high"] = max(float(k[2]) for k in window)
             r["consol_low"] = min(float(k[3]) for k in window)
     return rows, {"bstocks_excluded_total": len(bstocks),
-                  "bstocks_above_floor": r011_floor_passing}
+                  "bstocks_above_floor": r011_floor_passing,
+                  "r016_excluded": [{"symbol": e["symbol"],
+                                     "avg_raw_pct": round(e["avg_abs_daily_raw_pct"], 1)}
+                                    for e in r016_excluded]}
+
+
+def _log_discard_simple(symbol, reason):
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import place as _p
+    _p.append_jsonl(Path(__file__).resolve().parent.parent / "logs" / "signals_discarded.jsonl",
+                    {"ts": _p.now_iso(), "ticker": symbol.replace("USDT", ""),
+                     "contract": None, "chainId": None, "reason": reason})
 
 
 def a_evidence(row):
@@ -689,6 +712,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
         "scanned_deep": min(top, len(rows)),
         "r011_bstocks_excluded": r011["bstocks_excluded_total"],
         "r011_above_floor": [e["symbol"] for e in r011["bstocks_above_floor"]],
+        "r016_excluded": r011["r016_excluded"],
         "candidates": candidates,
         "packet_worthy": [c["symbol"] for c in candidates if c["packet_worthy"]],
     }

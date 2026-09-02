@@ -326,11 +326,16 @@ def _check_r015(draft, ctx):
                        + "; ".join(vote.get("failed", [])[:3]))
 
 
+def _check_r016(draft, ctx):
+    return "OK", "enforced at ingest (scan.py) — pairs over 12% raw avg daily move never reach drafts"
+
+
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
             "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
             "R007": _check_r007, "R008": _check_r008, "R009": _check_r009,
             "R010": _check_r010, "R011": _check_r011, "R012": _check_r012,
-            "R013": _check_r013, "R014": _check_r014, "R015": _check_r015}
+            "R013": _check_r013, "R014": _check_r014, "R015": _check_r015,
+            "R016": _check_r016}
 
 
 def run_rule_checks(draft, rules, ctx):

@@ -48,6 +48,12 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   Target and stop are derived from market structure — recent swing highs and
   lows — never from fixed percentages. A candidate that cannot produce a
   structural target and stop is blocked, not estimated.
+- **R016** Pairs whose RAW average daily move exceeds 12% are excluded from
+  the scan universe. A 12%-daily asset routinely travels ±20% inside the
+  R013 72h hold — structural stops are meaningless at that amplitude and
+  the pair is not swing-tradeable on our clock. Every exclusion is logged
+  so the boundary stays visible. (12% = 1.5x the 8% threshold-scaling cap,
+  keeping the capped-but-included band observable.)
 - **R015** A packet requires its setup's indicator checklist to pass — 3 of 4
   for PULLBACK and BREAKOUT, 4 of 4 for BASING and REVERSAL — drawn from five
   dimensions verified pairwise-independent (all r < 0.7, measured on a
