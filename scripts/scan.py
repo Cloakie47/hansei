@@ -474,6 +474,25 @@ def compute_dimensions(daily, btc_closes, vwap_dist_pct):
 
 VOTE_NEED = {"PULLBACK": 3, "BREAKOUT": 3, "BASING": 4, "REVERSAL": 4}
 
+# Two triggers measuring the same quantity count as ONE (2026-09-02
+# correctness fix): A's 'vol' (7d volume ratio) and B's 'vol-expand' (24h
+# kline volume vs prior days) are both volume and were counted as two
+# independent signals in the replay gate and the confidence tier.
+TRIGGER_FAMILY = {"chg": "price-change", "vol": "volume", "vol-expand": "volume",
+                  "range-edge": "range", "candle": "candle",
+                  "imbalance": "order-book"}
+
+
+def trigger_families(triggers_by_source):
+    """Distinct measured quantities across all triggering sources."""
+    fams = set()
+    for src, trigs in (triggers_by_source or {}).items():
+        for t in trigs or []:
+            if t == "wide-spread":
+                continue  # warning, not a signal
+            fams.add(TRIGGER_FAMILY.get(t, t))
+    return fams
+
 
 def breakout_retest_held(row):
     """BREAKOUT quality (v3 +0.03, Pilot-approved): broke the consolidation

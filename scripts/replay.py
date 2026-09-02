@@ -172,7 +172,9 @@ def analyse(symbol, t_ms):
             dims = scanmod.compute_dimensions(ds["_daily"], btc_closes, vwap_dist)
             vote = scanmod.setup_vote(setup, dims)
             import run as runmod
-            n_avail = (1 if a_trig else 0) + (1 if b_trig else 0)
+            # families, not sources: 'vol' (A) and 'vol-expand' (B) are the
+            # same quantity and count once (2026-09-02 fix)
+            n_avail = len(scanmod.trigger_families({"A": a_trig, "B": b_trig}))
             metrics = {"vol_ratio_7d": vol_ratio, "vol_expand": vol_ratio,
                        "imbalance": None, "aligned": None, "spread_bps": None,
                        "chg24": chg24}

@@ -229,9 +229,8 @@ def shadow_score(cand):
     """Log v2 and v3 side by side for every classified candidate."""
     if cand.get("setup") in (None, "CHASE", "UNCLASSIFIED") or "metrics" not in cand:
         return None
-    trig = {s: t for s, t in cand["triggers"].items()
-            if t and not (s == "C" and t == ["wide-spread"])}
-    n = len(trig)
+    import scan as scanmod
+    n = len(scanmod.trigger_families(cand["triggers"]))  # families, not sources
     m = dict(cand["metrics"])
     m["chg24"] = cand["chg_pct"]
     rr_value = cand["rr"]["rr"] if cand.get("rr") else None
@@ -311,9 +310,12 @@ def cmd_exit(args):
 def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
     trig = {s: t for s, t in cand["triggers"].items()
             if t and not (s == "C" and t == ["wide-spread"])}
-    n = len(trig)
+    # Tier counts distinct signal FAMILIES, not raw sources: A-vol +
+    # B-vol-expand is ONE volume signal, not two (2026-09-02 fix).
+    import scan as scanmod
+    n = len(scanmod.trigger_families(cand["triggers"]))
     if use_v1 or "metrics" not in cand:
-        conf = MECH_CONFIDENCE.get(n, 0.50)
+        conf = MECH_CONFIDENCE.get(min(n, 3), 0.50)
     else:
         conf = confidence_v2(n, cand["metrics"])
     parts = "; ".join(f"{s}:{'+'.join(t)}" for s, t in sorted(trig.items()))
