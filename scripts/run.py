@@ -464,6 +464,27 @@ def cmd_scan(args=()):
     })
     # R013: never silently hold — aged positions get exit packets proposed
     check_time_stops()
+    # FUNNEL SUMMARY — the whole arithmetic in one place (output formatting
+    # only, freeze-safe)
+    classified = [c for c in result["candidates"]
+                  if c.get("setup") not in (None, "CHASE", "UNCLASSIFIED")]
+    vote_passed = [c for c in classified if c.get("vote") and c["vote"]["pass"]]
+    r014_kills = sum(1 for s in skipped if "(R014)" in s)
+    r009_kills = sum(1 for s in skipped if "(R009)" in s)
+    r010_kills = sum(1 for s in skipped if "(R010)" in s)
+    n016 = len(result.get("r016_excluded", []))
+    print("FUNNEL " + "-" * 47)
+    print(f"  pairs past volume floor      {result['pairs_past_floor'] + n016:>4}")
+    print(f"  R016 ultra-volatile out      {-n016:>4}   (R011 bstocks: "
+          f"{result.get('r011_bstocks_excluded', 0)} excluded pre-floor)")
+    print(f"  deep-scanned                 {result['scanned_deep']:>4}")
+    print(f"  classified setups            {len(classified):>4}")
+    print(f"  passed indicator vote        {len(vote_passed):>4}")
+    print(f"  passed R014 structure        {len(vote_passed) - r014_kills - r010_kills:>4}"
+          + (f"   ({r010_kills} R010 dupe)" if r010_kills else ""))
+    print(f"  passed R009 confidence       {len(vote_passed) - r014_kills - r010_kills - r009_kills:>4}")
+    print(f"  PACKETS                      {len(packets):>4}")
+    print("-" * 54)
     if packets:
         print("PACKETS GENERATED:")
         for p in packets:

@@ -37,3 +37,4 @@
 {"ts": "2026-09-02T04:51:03Z","rule": "R009","symbol": "NEARUSDT","side": "BUY","confidence": 0.57,"evidence_sources": ["A","B","C"],"reason": "confidence 57.0% < 60.0% floor — suppressed to NO_PROPOSAL","rr": 3.13,"setup": "PULLBACK"}
 {"ts": "2026-09-02T16:49:34Z","rule": "R014","symbol": "PUMPUSDT","side": "BUY","confidence": 0.63,"evidence_sources": ["A","B","C"],"reason": "R014: no structural target/stop could be derived — blocked, not estimated","setup": "PULLBACK"}
 {"ts": "2026-09-02T17:56:54Z","rule": "R009","symbol": "PUMPUSDT","side": "BUY","confidence": 0.556,"evidence_sources": ["A","B","C"],"reason": "confidence 55.6% < 60.0% floor — suppressed to NO_PROPOSAL","rr": 0.681,"setup": "PULLBACK"}
+{"ts": "2026-09-02T18:42:14Z","rule": "R009","symbol": "PUMPUSDT","side": "BUY","confidence": 0.568,"evidence_sources": ["A","B","C"],"reason": "confidence 56.8% < 60.0% floor — suppressed to NO_PROPOSAL","rr": 0.682,"setup": "PULLBACK"}
