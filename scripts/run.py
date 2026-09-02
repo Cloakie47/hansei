@@ -38,7 +38,12 @@ import scan as scanmod
 
 ROOT = HERE.parent
 BALANCE_CTX = ROOT / "logs" / "balance-ctx.json"
-BALANCE_MAX_AGE_S = 30 * 60
+BALANCE_MAX_AGE_S = 6 * 60 * 60  # 6h (Pilot-approved 2026-09-03): a LIVE
+# fill invalidates the cache independently of this window; withdrawals are
+# impossible at the scope level; deposits are Pilot-initiated; every scan
+# cross-checks getAccount vs the wallet summary. The window is a backstop
+# for a case another mechanism already covers. The ceiling STAYS because
+# the stale-getAccount bug proves the exchange's own snapshot can lag ~12h.
 SCAN_HISTORY = ROOT / "logs" / "scan-history.jsonl"
 
 MECH_CONFIDENCE = {1: 0.50, 2: 0.57, 3: 0.62}  # v1 mapping (kept behind --v1)
@@ -123,7 +128,8 @@ def load_balance_ctx():
     ctx = json.loads(BALANCE_CTX.read_text(encoding="utf-8"))
     age = time.time() - ctx.get("fetched_at", 0) / 1000
     if age > BALANCE_MAX_AGE_S:
-        return None, f"balance context is {age/60:.0f} minutes old (max {BALANCE_MAX_AGE_S//60})"
+        return None, (f"balance context is {age/60:.0f} minutes old "
+                      f"(max {BALANCE_MAX_AGE_S//60})")
     return ctx, None
 
 
