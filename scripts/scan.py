@@ -377,6 +377,16 @@ def risk_reward(row, b, setup):
         target = (b["hi_7d"] + b["lo_7d"]) / 2  # conservative: range mid first
     else:
         target = b["hi_7d"]
+    # 72h reachability (2026-09-02): the target cannot exceed what the pair
+    # plausibly travels inside the R013 hold — 3x its RAW average daily
+    # move. Uses RAW volatility (reachability is about reality, not
+    # thresholds); the cap is recorded when it binds.
+    avg_raw = row.get("avg_abs_daily_raw_pct") or row.get("avg_abs_daily_pct")
+    capped = False
+    if avg_raw:
+        travel_cap = entry * (1 + TARGET_TRAVEL_MULT * avg_raw / 100)
+        if target > travel_cap:
+            target, capped = travel_cap, True
     if entry <= stop or target <= entry:
         return None
     # A stop closer than half the pair's average daily move is noise, not
@@ -386,6 +396,7 @@ def risk_reward(row, b, setup):
     if avg and (entry - stop) < entry * (0.5 * avg / 100):
         return None
     return {"entry": entry, "stop": stop, "target": target,
+            "target_capped_72h": capped,
             "rr": (target - entry) / (entry - stop)}
 
 
