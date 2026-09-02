@@ -38,7 +38,10 @@ API = "https://api.binance.com/api/v3"
 # Stable/fiat quote assets masquerading as base assets of USDT pairs —
 # never trade candidates.
 STABLE_BASES = {"USDC", "FDUSD", "TUSD", "DAI", "EUR", "EURI", "AEUR", "USDP",
-                "XUSD", "USD1", "BFUSD", "PAXG"}
+                "XUSD", "USD1", "BFUSD", "PAXG", "RLUSD", "USDE", "USDS",
+                "FRAX", "SUSD", "XAUT"}  # XAUT/PAXG: gold trackers — not
+                # stable, but pegged to an external market like bstocks
+                # (RLUSD slipped through and classified as a "pullback")
 
 VOLUME_FLOOR = 15_000_000   # 24h quote volume, USDT; 20m -> 15m 2026-09-02
                             # (+15 pairs coverage; 10-15m band rejected: thin books)

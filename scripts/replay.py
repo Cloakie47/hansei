@@ -73,6 +73,31 @@ def klines_window(symbol, t_ms):
                startTime=start, endTime=end, limit=200)
 
 
+def daily_structure(symbol, t_ms):
+    """Daily-kline structure at T for the setup classifier (same fields the
+    live scanner computes)."""
+    start = t_ms - 35 * 86_400_000
+    daily = get("klines", symbol=symbol, interval="1d",
+                startTime=start, endTime=t_ms, limit=40)
+    daily = [k for k in daily if k[6] <= t_ms]
+    if len(daily) < 25:
+        return None
+    closes = [float(k[4]) for k in daily]
+    chgs = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[-8:-1] if float(k[1])]
+    avg = sum(chgs) / len(chgs) if chgs else None
+    window = daily[-10:-2]
+    return {
+        "sma20": sum(closes[-20:]) / 20,
+        "sma20_prev5": sum(closes[-25:-5]) / 20,
+        "sma20_rising": sum(closes[-20:]) / 20 > sum(closes[-25:-5]) / 20,
+        "chg_3d_pct": (closes[-1] / closes[-4] - 1) * 100,
+        "chg_5d_pct": (closes[-1] / closes[-6] - 1) * 100,
+        "avg_abs_daily_pct": avg,
+        "consol_high": max(float(k[2]) for k in window),
+        "consol_low": min(float(k[3]) for k in window),
+    }
+
+
 def analyse(symbol, t_ms):
     """A+B features at time T plus the hidden outcome after T."""
     ks = klines_window(symbol, t_ms)
@@ -110,18 +135,49 @@ def analyse(symbol, t_ms):
         "max_gain_pct": (max(float(k[2]) for k in future[:25]) / last - 1) * 100,
         "max_drawdown_pct": (min(float(k[3]) for k in future[:25]) / last - 1) * 100,
     }
+    # Current-spec additions: setup classification + structural R:R + v3
+    # confidence, matching what the live system proposes (A+B only — no
+    # order-book history, so C-dependent v3 terms simply contribute zero).
+    ds = daily_structure(symbol, t_ms)
+    lo7 = min(float(k[3]) for k in past[-168:])
+    hi7 = max(float(k[2]) for k in past[-168:])
+    swing_low_48h = min(float(k[3]) for k in past[-48:])
+    setup, setup_detail, rr, v3 = "UNCLASSIFIED", "insufficient daily history", None, None
+    if ds:
+        row = dict(ds, chg_pct=chg24)
+        b_like = {"range_pos": range_pos, "last": last, "vol_expand": vol_ratio,
+                  "body_ratio": body_ratio, "hi_7d": hi7, "lo_7d": lo7,
+                  "swing_low_48h": swing_low_48h}
+        setup, setup_detail = scanmod.classify_setup(row, b_like)
+        if setup not in ("CHASE", "UNCLASSIFIED"):
+            rr = scanmod.risk_reward(row, b_like, setup)
+            import run as runmod
+            n_avail = (1 if a_trig else 0) + (1 if b_trig else 0)
+            metrics = {"vol_ratio_7d": vol_ratio, "vol_expand": vol_ratio,
+                       "imbalance": None, "aligned": None, "spread_bps": None,
+                       "chg24": chg24}
+            structure = dict(ds, last=last, range_pos=range_pos, vol_expand=vol_ratio,
+                             body_ratio=body_ratio)
+            v3 = runmod.confidence_v3(setup, n_avail, metrics, structure,
+                                      rr["rr"] if rr else None)
     return {"symbol": symbol, "last": last, "chg24_pct": chg24, "chg_thr": chg_thr,
             "vol_ratio": vol_ratio, "range_pos": range_pos, "body_ratio": body_ratio,
             "a_trig": a_trig, "b_trig": b_trig, "vol24_usdt": vol24,
+            "setup": setup, "setup_detail": setup_detail,
+            "rr": rr, "v3": v3,
             "outcome": outcome}
 
 
 def render(rid, alias, f, conf):
+    rr = f.get("rr")
     lines = [
         f"━━━ REPLAY PACKET {rid} ━━━  (DRILL — historical, anonymised, not a live proposal)",
         "",
         f"PROPOSAL   BUY [stake] USDT of {alias} (spot, market)",
-        f"CONFIDENCE {conf:.0%}  (2-of-2 available sources; C has no history)",
+        f"CONFIDENCE {conf:.0%}  (v3, A+B evidence only — C-dependent terms zero, no book history)",
+        f"SETUP      {f.get('setup')} — {f.get('setup_detail', '')}",
+    ] + ([f"R:R        {rr['rr']:.1f} : 1 (target {rr['target']:g}, stop {rr['stop']:g}, "
+          f"entry ref {rr['entry']:g})"] if rr else []) + [
         f"THESIS     {alias} moved {f['chg24_pct']:+.2f}% in its trailing 24h "
         f"(own-volatility threshold {f['chg_thr']:.1f}%), 24h volume "
         f"{(f['vol_ratio'] or 0):.2f}x its prior average, sitting at "
@@ -136,8 +192,9 @@ def render(rid, alias, f, conf):
         "  • [C] unavailable in replay (no historical order book)",
         "",
         "INVALIDATION",
-        "  The triggering excursion reversing within 24h: change sign flip or",
-        "  volume back under 1x average.",
+        f"  Structural stop at {rr['stop']:g} (48h swing low); the setup's own "
+        "reversal conditions apply." if rr else
+        "  The triggering excursion reversing within 24h.",
         "",
         f"━━━ Pilot: python scripts/replay.py verdict {rid} y|n [code] ━━━",
     ]
@@ -153,7 +210,7 @@ def cmd_new(args):
     rng = random.Random(seed)
     t_ms = int((datetime.now(timezone.utc) - timedelta(days=days))
                .replace(minute=0, second=0, microsecond=0).timestamp() * 1000)
-    sid = f"s{days}d{seed}"
+    sid = f"s{days}d{seed}v3"
     pairs, _ = scanmod.active_usdt_pairs()
     tickers = get("ticker/24hr")
     universe = sorted((t["symbol"] for t in tickers
@@ -172,22 +229,32 @@ def cmd_new(args):
     aliases = [f"SYM-{i:02d}" for i in range(1, len(feats) + 1)]
     rng.shuffle(aliases)
     session = {"sid": sid, "t_ms": t_ms, "days_ago": days, "seed": seed,
+               "spec": "classifier-v3",  # current-spec drills; older sessions lack this
                "packets": {}, "mapping": {}}
     n_pack = 0
     for f, alias in zip(feats[:DEEP], aliases):
-        full = bool(f["a_trig"]) and bool(f["b_trig"])
-        conf = CONF_FULL if full else CONF_PARTIAL
+        # Current-spec gates, mirroring live: classified setup, both available
+        # sources triggering, structural R:R >= 2 (R014), v3 conf >= floor.
+        if f.get("setup") in ("CHASE", "UNCLASSIFIED"):
+            continue
+        if not (f["a_trig"] and f["b_trig"]):
+            continue
+        if not f.get("rr") or f["rr"]["rr"] < 2.0:
+            continue
+        conf = f.get("v3") or CONF_PARTIAL
         if conf < FLOOR:
             continue
         n_pack += 1
         rid = f"r-{sid}-{n_pack:02d}"
         path = render(rid, alias, f, conf)
         session["packets"][rid] = {"alias": alias, "confidence": conf,
+                                   "setup": f["setup"],
+                                   "rr": round(f["rr"]["rr"], 2),
                                    "features": {k: f[k] for k in
                                                 ("chg24_pct", "vol_ratio", "range_pos", "chg_thr")},
                                    "outcome": f["outcome"]}
         session["mapping"][rid] = f["symbol"]
-        print(f"  {rid}: {alias}  ({path})")
+        print(f"  {rid}: {alias}  {f['setup']} rr={f['rr']['rr']:.2f} v3={conf:.3f}  ({path})")
     SESSIONS.mkdir(parents=True, exist_ok=True)
     (SESSIONS / f"{sid}.json").write_text(json.dumps(session, indent=2), encoding="utf-8")
     print(f"session {sid}: {n_pack} replay packets from {len(feats)} analysed pairs. "
@@ -216,9 +283,12 @@ def cmd_pending():
     done = _decided_rids()
     n = 0
     for s in _load_sessions().values():
+        tag = "" if s.get("spec") == "classifier-v3" else "  [PRE-CLASSIFIER SPEC — old evidence format]"
         for rid, p in s["packets"].items():
             if rid not in done:
-                print(f"{rid}  {p['alias']}  BUY  {p['confidence']:.0%}  ({RPACKETS / (rid + '.txt')})")
+                extra = f"  {p['setup']} rr={p['rr']}" if p.get("setup") else ""
+                print(f"{rid}  {p['alias']}  BUY  {p['confidence']:.0%}{extra}  "
+                      f"({RPACKETS / (rid + '.txt')}){tag}")
                 n += 1
     if not n:
         print("no pending replay packets — create a session: python scripts/replay.py new --days-ago N")

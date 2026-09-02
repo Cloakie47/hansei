@@ -1,0 +1,30 @@
+{
+  "sid": "s17d4v3",
+  "t_ms": 1786856400000,
+  "days_ago": 17,
+  "seed": 4,
+  "spec": "classifier-v3",
+  "packets": {
+    "r-s17d4v3-01": {
+      "alias": "SYM-14",
+      "confidence": 0.616,
+      "setup": "PULLBACK",
+      "rr": 23.21,
+      "features": {
+        "chg24_pct": -35.6786200635497,
+        "vol_ratio": 3.1202988533116156,
+        "range_pos": 0.16448993999294031,
+        "chg_thr": 43.83216408820535
+      },
+      "outcome": {
+        "chg_6h_pct": -0.5645730416372619,
+        "chg_24h_pct": 10.58574453069867,
+        "max_gain_pct": 26.32321806633733,
+        "max_drawdown_pct": -6.845448129851794
+      }
+    }
+  },
+  "mapping": {
+    "r-s17d4v3-01": "ACEUSDT"
+  }
+}

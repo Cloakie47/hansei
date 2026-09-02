@@ -1,0 +1,17 @@
+━━━ REPLAY PACKET r-s17d4v3-01 ━━━  (DRILL — historical, anonymised, not a live proposal)
+
+PROPOSAL   BUY [stake] USDT of SYM-14 (spot, market)
+CONFIDENCE 62%  (v3, A+B evidence only — C-dependent terms zero, no book history)
+SETUP      PULLBACK — uptrend (close>0.1022, SMA20 rising), retraced -35.7% to within 40.1% of the 20d mean (1.5x own 26.8% avg daily move)
+R:R        23.2 : 1 (target 0.3784, stop 0.1315, entry ref 0.1417)
+THESIS     SYM-14 moved -35.68% in its trailing 24h (own-volatility threshold 43.8%), 24h volume 3.12x its prior average, sitting at 16% of its 7-day range.
+
+EVIDENCE
+  • [A] cross-sectional -> 24h -35.68% vs threshold 43.8%; volume 3.12x prior avg (65.9m USDT); triggers: ['vol']
+  • [B] time series -> 16% of 7d range; current candle body 0.49x prior 24 avg; triggers: ['vol-expand']
+  • [C] unavailable in replay (no historical order book)
+
+INVALIDATION
+  Structural stop at 0.1315 (48h swing low); the setup's own reversal conditions apply.
+
+━━━ Pilot: python scripts/replay.py verdict r-s17d4v3-01 y|n [code] ━━━

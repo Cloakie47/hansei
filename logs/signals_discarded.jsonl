@@ -143,3 +143,5 @@
 {"ts": "2026-09-02T04:34:16Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 29.1m above floor — excluded from universe"}
 {"ts": "2026-09-02T04:50:50Z","ticker": "CRCLB","contract": null,"chainId": null,"reason": "R011: CRCLBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 16.6m above floor — excluded from universe"}
 {"ts": "2026-09-02T04:50:50Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 29.0m above floor — excluded from universe"}
+{"ts": "2026-09-02T05:44:37Z","ticker": "CRCLB","contract": null,"chainId": null,"reason": "R011: CRCLBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 16.7m above floor — excluded from universe"}
+{"ts": "2026-09-02T05:44:37Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 29.0m above floor — excluded from universe"}
