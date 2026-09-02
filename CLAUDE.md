@@ -212,6 +212,14 @@ NEVER, regardless:
 Every autonomous change gets a one-line entry in
 logs/autonomous-changes.jsonl with what changed and why, so it is reviewable.
 
+## FEATURE FREEZE (Pilot-declared 2026-09-02)
+
+The trading logic is frozen as of 2026-09-02, after R015 (indicator vote),
+the setup-specific checklists, and the BREAKOUT retest term shipped. From
+this point: NO new indicators, setups, dimensions, or scoring changes
+without the Pilot's explicit approval. Correctness bugs and crash fixes
+only, logged in logs/autonomous-changes.jsonl as always.
+
 ## Build order (do not skip ahead)
 
 1. [~] MCP connected + smoke-tested, 40 USDT funded; first live trade awaits
