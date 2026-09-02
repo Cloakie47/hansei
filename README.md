@@ -105,6 +105,20 @@ verifiable, and they authorize nothing.
   — an agent trusting it alone sizes trades against phantom capital; our
   balance layer refuses to size a trade when no source is trustworthy.
 
+## The exit model, stated plainly
+
+Targets and stops are computed from market structure and GATE every trade
+(no packet exists below 2:1 reward-to-risk) — but no protective order
+rests on the exchange. Between scans a position is protected by the
+72-hour time stop (an exit is proposed at the next scan, R013) and by the
+Pilot's presence, not by a resting stop-loss: on a gap down between scans,
+the stop is advisory. Placing a protective OCO after entry is mechanically
+possible but was assessed and deliberately NOT built in the hackathon
+window — the order-list family has no test endpoint, so it cannot be
+proven in paper mode first, and shipping an untestable write path violated
+our own methodology (docs/exit-protection-assessment.md has the full
+assessment). We state this rather than let you find it.
+
 ## Publishing status
 
 The nightly Debrief has two outputs: the full self-review and a sub-150-word

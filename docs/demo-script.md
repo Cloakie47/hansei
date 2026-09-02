@@ -47,7 +47,12 @@ stay visible forever. The rulebook is the learning, and it is append-only."
 SHOW: debriefs/2026-09-02.md, the addendum "the drill that audited its
 maker". Highlight the R013 paragraph, then the 'believed fixed' line.
 
-SAY: "And the part I trust most: the system documents its own failures.
+SAY: "One honest limit, said before you find it: stops and targets gate
+every trade but no protective order rests on the exchange — between scans
+the stop is advisory, positions are guarded by the 72-hour time stop and
+the human's presence. We assessed the protective-OCO path and documented
+why shipping an untestable write flow would have broken our own rules.
+And the part I trust most: the system documents its own failures.
 Three times, documented behavior turned out to be unimplemented. Sharpest:
 rule R013 promised an exit proposal for any position held past 72 hours —
 it was rule text with no code behind it until a drill exposed it. A
