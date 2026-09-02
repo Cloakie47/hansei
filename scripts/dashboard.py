@@ -172,6 +172,28 @@ def build():
                      f"<td class='v-{p['verdict']}'>{esc(p['verdict'])}</td>"
                      f"<td>{esc(code)}{esc(extra)}</td></tr>")
 
+    # --- confidence drift monitor (monitoring only) ---
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        import run as runmod
+        drift_rows, drift_warns = runmod.confidence_drift()
+    except Exception:
+        drift_rows, drift_warns = [], []
+    drift_html = "<p class='muted'>no confidence-bearing drafts yet</p>"
+    if drift_rows:
+        mx = max(r["n"] for r in drift_rows)
+        parts = []
+        for r in drift_rows:
+            parts.append(
+                f"<div class='drift-day'><b>{esc(r['day'])}</b> — mean "
+                f"{r['mean']:.3f}, median {r['median']:.3f}, n={r['n']}, "
+                f"within 0.02 of the 60% floor: {r['near_floor']}</div>")
+        warn_html = "".join(f"<p class='warn'>{esc(w)}</p>" for w in drift_warns) or \
+            "<p class='muted'>No drift warning active (fires on 3 consecutive " \
+            "rising days of mean or near-floor count). Monitoring only — this " \
+            "panel changes no scores and gates nothing.</p>"
+        drift_html = "".join(parts) + warn_html
+
     # --- suppressions ---
     sup_counts = Counter(s["rule"] for s in sup)
     sup_html = "".join(
@@ -209,6 +231,8 @@ def build():
   .v-REJECTED {{ color:{ORANGE}; font-weight:600; }}
   .v-APPROVED {{ color:{AQUA}; font-weight:600; }}
   .v-NO_PROPOSAL {{ color:{MUTED}; font-weight:600; }}
+  .warn {{ color:{ORANGE}; font-weight:600; }}
+  .drift-day {{ font-size:.9rem; padding:.25rem 0; }}
   footer {{ color:{MUTED}; font-size:.8rem; margin:2.5rem 0 1rem; }}
 </style></head><body>
 <h1>HANSEI — the honest report card</h1>
@@ -229,6 +253,9 @@ scripts/dashboard.py from the append-only logs. Regenerate:
 <div class="card"><table>
 <tr><th>id</th><th>decided (UTC)</th><th>symbol</th><th>verdict</th><th>reason</th></tr>
 {dec_html}</table></div>
+
+<h2>Confidence drift monitor — watching the scores watch themselves</h2>
+<div class="card">{drift_html}</div>
 
 <h2>Suppressions by rule — the packets that never were</h2>
 <div class="card">{sup_html}

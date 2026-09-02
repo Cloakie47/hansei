@@ -29,10 +29,12 @@
   .v-REJECTED { color:#eb6834; font-weight:600; }
   .v-APPROVED { color:#1baf7a; font-weight:600; }
   .v-NO_PROPOSAL { color:#6b6a63; font-weight:600; }
+  .warn { color:#eb6834; font-weight:600; }
+  .drift-day { font-size:.9rem; padding:.25rem 0; }
   footer { color:#6b6a63; font-size:.8rem; margin:2.5rem 0 1rem; }
 </style></head><body>
 <h1>HANSEI — the honest report card</h1>
-<p class="muted">Static, read-only snapshot generated 2026-09-02 18:43 UTC by
+<p class="muted">Static, read-only snapshot generated 2026-09-02 18:55 UTC by
 scripts/dashboard.py from the append-only logs. Regenerate:
 <code>python scripts/dashboard.py</code></p>
 
@@ -49,6 +51,9 @@ scripts/dashboard.py from the append-only logs. Regenerate:
 <div class="card"><table>
 <tr><th>id</th><th>decided (UTC)</th><th>symbol</th><th>verdict</th><th>reason</th></tr>
 <tr><td>p-20260901-004</td><td>2026-09-01T16:59:42Z</td><td>—</td><td class='v-NO_PROPOSAL'>NO_PROPOSAL</td><td></td></tr><tr><td>p-20260901-005</td><td>2026-09-01T20:00:58Z</td><td>UNIUSDT</td><td class='v-REJECTED'>REJECTED</td><td>OTHER (spec-superseded: administrative, excluded from preference inference)</td></tr><tr><td>p-20260901-006</td><td>2026-09-01T20:00:58Z</td><td>DASHUSDT</td><td class='v-REJECTED'>REJECTED</td><td>OTHER (spec-superseded: administrative, excluded from preference inference)</td></tr><tr><td>p-20260901-007</td><td>2026-09-01T20:00:58Z</td><td>SOLUSDT</td><td class='v-REJECTED'>REJECTED</td><td>OTHER (spec-superseded: administrative, excluded from preference inference)</td></tr><tr><td>p-20260901-1000</td><td>2026-09-02T05:02:02Z</td><td>FILUSDT</td><td class='v-REJECTED'>REJECTED</td><td>CONVICTION</td></tr><tr><td>p-20260901-1001</td><td>2026-09-02T05:02:03Z</td><td>CRVUSDT</td><td class='v-REJECTED'>REJECTED</td><td>CONVICTION</td></tr><tr><td>p-20260902-002</td><td>2026-09-02T17:07:34Z</td><td>—</td><td class='v-NO_PROPOSAL'>NO_PROPOSAL</td><td></td></tr></table></div>
+
+<h2>Confidence drift monitor — watching the scores watch themselves</h2>
+<div class="card"><div class='drift-day'><b>2026-09-01</b> — mean 0.574, median 0.572, n=36, within 0.02 of the 60% floor: 13</div><div class='drift-day'><b>2026-09-02</b> — mean 0.588, median 0.570, n=7, within 0.02 of the 60% floor: 1</div><p class='muted'>No drift warning active (fires on 3 consecutive rising days of mean or near-floor count). Monitoring only — this panel changes no scores and gates nothing.</p></div>
 
 <h2>Suppressions by rule — the packets that never were</h2>
 <div class="card"><div class="bar-row"><div class="bar-label">R009 suppressions</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:#eb6834"></div></div><div class="bar-value">34</div></div><div class="bar-row"><div class="bar-label">R010 suppressions</div><div class="bar-track"><div class="bar-fill" style="width:3%;background:#eb6834"></div></div><div class="bar-value">1</div></div><div class="bar-row"><div class="bar-label">R014 suppressions</div><div class="bar-track"><div class="bar-fill" style="width:9%;background:#eb6834"></div></div><div class="bar-value">3</div></div>

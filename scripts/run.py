@@ -268,6 +268,8 @@ def exit_draft(symbol, base_qty, opened_ts, reason):
         "size_reasoning": f"Full position close: {base_qty:g} base units held.",
         "max_hold_hours": 24,
         "setup": "EXIT", "setup_detail": reason,
+        "market_regime": {k: v for k, v in scanmod.market_regime().items()
+                          if not k.startswith("_")},
     }
 
 
@@ -548,6 +550,53 @@ def decided(proposals):
     return [p for p in proposals if p.get("verdict") in ("APPROVED", "REJECTED", "NO_PROPOSAL")]
 
 
+def confidence_drift():
+    """Monitoring only — changes no scores, gates nothing. Every draft's
+    confidence per UTC day (suppressed + decided + pending), with mean,
+    median, and the count landing within 0.02 of the 60% floor. Warns when
+    the mean rises or the near-floor count grows across three consecutive
+    days — the anti-gaming check for score creep."""
+    import statistics
+    from collections import defaultdict
+    by_day = defaultdict(list)
+    sup_log = ROOT / "logs" / "suppressed.jsonl"
+    if sup_log.exists():
+        for l in sup_log.read_text(encoding="utf-8").splitlines():
+            if not l.strip():
+                continue
+            s = json.loads(l)
+            if s.get("test") or s.get("confidence") is None:
+                continue
+            by_day[s["ts"][:10]].append(s["confidence"])
+    for p in propose.load_proposals(include_test=False):
+        if p.get("confidence") is not None:
+            by_day[p["ts"][:10]].append(p["confidence"])
+    for f in sorted(propose.PENDING_DIR.glob("p-*.json")):
+        d = json.loads(f.read_text(encoding="utf-8"))
+        c = d.get("draft", {}).get("confidence")
+        if c is not None:
+            by_day[datetime.now(timezone.utc).strftime("%Y-%m-%d")].append(c)
+    days = sorted(by_day)
+    rows = []
+    for d in days:
+        vals = by_day[d]
+        rows.append({"day": d, "n": len(vals),
+                     "mean": round(statistics.mean(vals), 3),
+                     "median": round(statistics.median(vals), 3),
+                     "near_floor": sum(1 for v in vals if abs(v - 0.60) <= 0.02)})
+    warnings = []
+    if len(rows) >= 3:
+        last3 = rows[-3:]
+        if last3[0]["mean"] < last3[1]["mean"] < last3[2]["mean"]:
+            warnings.append(f"CONFIDENCE DRIFT WARNING: mean rising 3 consecutive days "
+                            f"({last3[0]['mean']} -> {last3[1]['mean']} -> {last3[2]['mean']})")
+        if last3[0]["near_floor"] < last3[1]["near_floor"] < last3[2]["near_floor"]:
+            warnings.append(f"FLOOR-CLUSTERING WARNING: drafts within 0.02 of the 60% "
+                            f"floor growing 3 consecutive days "
+                            f"({last3[0]['near_floor']} -> {last3[1]['near_floor']} -> {last3[2]['near_floor']})")
+    return rows, warnings
+
+
 def cmd_status():
     proposals = [p for p in propose.load_proposals(include_test=False)]
     dec = decided(proposals)
@@ -575,6 +624,16 @@ def cmd_status():
                   "Not an error; no idea clearing the bar is a valid output.")
     else:
         print("packets per scan: no scan history yet")
+    rows, warns = confidence_drift()
+    if rows:
+        print("confidence per day (mean / median / n / within 0.02 of floor):")
+        for r in rows:
+            print(f"  {r['day']}: {r['mean']:.3f} / {r['median']:.3f} / n={r['n']} "
+                  f"/ near-floor={r['near_floor']}")
+        for w in warns:
+            print("!! " + w)
+        if not warns:
+            print("  (no drift warning: needs 3 consecutive rising days to fire)")
     mode = place.read_mode()
     print(f"MODE: {mode}")
     return 0
