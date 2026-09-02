@@ -84,7 +84,8 @@ def daily_structure(symbol, t_ms):
         return None
     closes = [float(k[4]) for k in daily]
     chgs = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[-8:-1] if float(k[1])]
-    avg = sum(chgs) / len(chgs) if chgs else None
+    avg = (min(sum(chgs) / len(chgs), scanmod.AVG_DAILY_CAP) if chgs else None)
+    avg_raw = sum(chgs) / len(chgs) if chgs else None
     window = daily[-10:-2]
     return {
         "sma20": sum(closes[-20:]) / 20,
@@ -93,6 +94,7 @@ def daily_structure(symbol, t_ms):
         "chg_3d_pct": (closes[-1] / closes[-4] - 1) * 100,
         "chg_5d_pct": (closes[-1] / closes[-6] - 1) * 100,
         "avg_abs_daily_pct": avg,
+        "avg_abs_daily_raw_pct": avg_raw,
         "consol_high": max(float(k[2]) for k in window),
         "consol_low": min(float(k[3]) for k in window),
         "_daily": daily,  # for the R015 dimensions
@@ -130,7 +132,8 @@ def analyse(symbol, t_ms):
     daily_chgs = []
     for i in range(24, len(closes), 24):
         daily_chgs.append(abs(closes[i] / closes[i - 24] - 1) * 100)
-    chg_thr = max(2.5, 1.6 * (sum(daily_chgs) / len(daily_chgs))) if daily_chgs else 4.0
+    chg_thr = (max(2.5, 1.6 * min(sum(daily_chgs) / len(daily_chgs),
+                                   scanmod.AVG_DAILY_CAP)) if daily_chgs else 4.0)
     body = abs(float(past[-1][4]) - float(past[-1][1]))
     prior_bodies = [abs(float(k[4]) - float(k[1])) for k in past[-25:-1]]
     body_ratio = body / (sum(prior_bodies) / len(prior_bodies)) if prior_bodies else None
@@ -307,6 +310,8 @@ def cmd_pending():
     done = _decided_rids()
     n = 0
     for s in _load_sessions().values():
+        if s.get("retired"):
+            continue  # documented catches, not drills
         tag = "" if s.get("spec") == "classifier-v3" else "  [PRE-CLASSIFIER SPEC — old evidence format]"
         for rid, p in s["packets"].items():
             if rid not in done:
@@ -333,6 +338,9 @@ def cmd_verdict(args):
         return 1
     for s in _load_sessions().values():
         if rid in s["packets"]:
+            if s.get("retired"):
+                print(f"{rid} is RETIRED — {s['retired'][:120]}...")
+                return 1
             p = s["packets"][rid]
             entry = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                      "replay": True, "rid": rid, "sid": s["sid"],

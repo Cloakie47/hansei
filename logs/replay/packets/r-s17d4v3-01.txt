@@ -1,3 +1,8 @@
+RETIRED (2026-09-02) — DO NOT DECIDE. This drill exposed three correctness
+bugs (uncapped volatility scaling, unreachable R:R target, same-signal-
+counted-twice) and is retained as the documented catch. Under the fixed
+spec its candidate is UNCLASSIFIED at the first gate.
+
 ━━━ REPLAY PACKET r-s17d4v3-01 ━━━  (DRILL — historical, anonymised, not a live proposal)
 
 PROPOSAL   BUY [stake] USDT of SYM-14 (spot, market)

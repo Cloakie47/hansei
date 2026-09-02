@@ -26,5 +26,6 @@
   },
   "mapping": {
     "r-s17d4v3-01": "ACEUSDT"
-  }
+  },
+  "retired": "pre-R015 and defective \u2014 retained as a documented catch, not a drill. Three correctness bugs found via r-s17d4v3-01: (1) volatility scaling had no ceiling (26.8% avg daily -> 40%-wide 'support zone'); (2) R:R not sanity-checked against the 72h hold (23:1 from an unreachable target); (3) A-vol and B-vol-expand counted as two independent sources (same quantity twice). Under the fixed spec the candidate is UNCLASSIFIED \u2014 killed by the setup classifier at the first gate."
 }
