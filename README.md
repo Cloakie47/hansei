@@ -13,6 +13,27 @@ rejects every proposal, and Binance requires its own confirmation on top.
 metric. It starts at 0% (0 of 1) and every point carries its denominator,
 because a rate without its n is how small experiments lie.
 
+## The claim, proven with timestamps
+
+HANSEI's claim is that the agent learns the Pilot's judgment. Here is that
+loop executing in one evening, with the causation direction provable from
+the git history and logs (all times UTC, 2026-09-01):
+
+- **~19:57Z** — the agent generates two packets (FIL +15.0%, CRV +15.2%,
+  both near their range highs) that pass every gate then in force.
+- **~20:05Z** — the Pilot reads them and rejects the evidence as
+  chase-shaped. **No setup classifier exists at this moment.**
+- **20:14Z** — a setup classifier is built from that critique and committed.
+- **~20:25Z** — on its first pass over fresh data, the classifier
+  independently labels both FIL and CRV as CHASE and blocks that class of
+  packet permanently.
+- **05:02Z (+1)** — the Pilot's formal CONVICTION rejections are logged.
+
+Human judgment first; the code caught up nine minutes later, then agreed,
+then made the mistake structurally impossible to repeat. That ordering —
+verifiable in commits fe0dcf0/b91e086 and logs/proposals.jsonl — is the
+product working as claimed.
+
 ## Confirm-before-execute is the design, not a limitation
 
 The agent (the Unit) drafts a decision packet: thesis, evidence with cited
@@ -74,6 +95,18 @@ placement — go through the Binance MCP server.
 - [spot_getAccount serves a stale snapshot after a confirmed deposit](docs/bug-report-stale-getaccount.md)
   — an agent trusting it alone sizes trades against phantom capital; our
   balance layer refuses to size a trade when no source is trustworthy.
+
+## Publishing status
+
+The nightly Debrief has two outputs: the full self-review and a sub-150-word
+public version written for Binance Square. The square-post integration is
+installed and dry-run tested (`logs/square-dryrun-2026-09-01.txt` holds the
+exact payload that would be sent), but publishing requires a Binance Square
+OpenAPI key the team may not obtain before the deadline. The fallback IS the
+repo: every Square draft is committed under `debriefs/` as
+`YYYY-MM-DD-square.md`, timestamped by git, unedited after the fact. The
+report card is public either way — Square is a distribution channel, not
+the product.
 
 ## What we claim, and what we don't
 
