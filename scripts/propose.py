@@ -313,11 +313,24 @@ def _check_r014(draft, ctx):
                   "structural levels)")
 
 
+def _check_r015(draft, ctx):
+    if draft.get("exit"):
+        return "OK", "exempt — the vote qualifies an entry setup; an exit has none"
+    vote = draft.get("vote")
+    if not isinstance(vote, dict):
+        return "BLOCKED", "no indicator vote on draft (R015 fail-closed)"
+    if vote.get("pass"):
+        return "OK", f"{vote['n_pass']} of 4 checks passed (need {vote['need']})"
+    return "BLOCKED", (f"vote failed: {vote.get('n_pass', 0)} of 4 "
+                       f"(need {vote.get('need')}); failing: "
+                       + "; ".join(vote.get("failed", [])[:3]))
+
+
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
             "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
             "R007": _check_r007, "R008": _check_r008, "R009": _check_r009,
             "R010": _check_r010, "R011": _check_r011, "R012": _check_r012,
-            "R013": _check_r013, "R014": _check_r014}
+            "R013": _check_r013, "R014": _check_r014, "R015": _check_r015}
 
 
 def run_rule_checks(draft, rules, ctx):
@@ -372,6 +385,13 @@ def render_packet(pid, draft, checks):
     if reg:
         lines.append(f"REGIME     BTC {reg['regime']}, 24h {reg['btc_chg24_pct']:+.2f}% "
                      f"(context only, not a gate)")
+    vote = draft.get("vote")
+    if isinstance(vote, dict):
+        lines.append(f"INDICATOR VOTE ({vote['n_pass']} of 4, need {vote['need']}) — R015")
+        for item in vote.get("passed", []):
+            lines.append(f"  [PASS] {item}")
+        for item in vote.get("failed", []):
+            lines.append(f"  [fail] {item}")
     lines += [
         f"THESIS     {draft['thesis']}",
         "",

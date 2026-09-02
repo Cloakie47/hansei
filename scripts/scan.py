@@ -136,7 +136,7 @@ def source_a(floor=VOLUME_FLOOR):
     # displayed. Daily klines are fetched for every floor-passer up front
     # (the ranking needs them) and reused by the deep loop.
     for r in rows:
-        daily = get("klines", symbol=r["symbol"], interval="1d", limit=30)
+        daily = get("klines", symbol=r["symbol"], interval="1d", limit=90)
         r["_daily"] = daily
         closes = [float(k[4]) for k in daily]
         daily_chgs_all = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[-15:-1]
@@ -149,7 +149,7 @@ def source_a(floor=VOLUME_FLOOR):
                               abs(r["ret_14d_pct"]) / (avg * math.sqrt(14))) if avg else 0.0
     rows.sort(key=lambda r: r["rank_score"], reverse=True)
     for r in rows[:TOP_CANDIDATES * 3]:
-        daily = r.pop("_daily")
+        daily = r["_daily"]  # kept on the row: the indicator vote needs it
         prior7 = [float(k[7]) for k in daily[-8:-1]]  # quote vol, prior 7 days
         r["vol_ratio_7d"] = (r["quote_volume"] / (sum(prior7) / len(prior7))) if prior7 else None
         closes = [float(k[4]) for k in daily]
@@ -364,6 +364,129 @@ def risk_reward(row, b, setup):
             "rr": (target - entry) / (entry - stop)}
 
 
+# ---------------------------------------------------------------------------
+# Indicator vote — R015, Pilot-approved 2026-09-02, supersedes R007
+# (docs/proposed-indicator-vote.md). Five dimensions, pairwise correlation
+# measured < 0.7 on a 341-sample panel; LOCATION is the weakest (r 0.53-0.59
+# vs three others) and is kept at full weight by Pilot decision. Checklists
+# are SETUP-SPECIFIC: 3-of-4 for PULLBACK/BREAKOUT, 4-of-4 for BASING/
+# REVERSAL. The vote replaces the old two-triggering-sources gate.
+
+import statistics
+
+
+def compute_dimensions(daily, btc_closes, vwap_dist_pct):
+    """The five vote dimensions from daily klines (needs ~80 bars)."""
+    if len(daily) < 80 or len(btc_closes) < 15:
+        return None
+    closes = [float(k[4]) for k in daily]
+    highs = [float(k[2]) for k in daily]
+    lows = [float(k[3]) for k in daily]
+    opens = [float(k[1]) for k in daily]
+    qv = [float(k[7]) for k in daily]
+    c = closes[-1]
+    chgs = [abs(closes[i] / closes[i - 1] - 1) * 100 for i in range(-14, 0)]
+    avg = sum(chgs) / len(chgs)
+    # TREND — structure primary, SMA confirmation
+    hh = max(highs[-10:]) > max(highs[-20:-10])
+    hl = min(lows[-10:]) > min(lows[-20:-10])
+    sma20 = sum(closes[-20:]) / 20
+    # MOMENTUM — 7/14d, relative to BTC
+    ret7 = (c / closes[-8] - 1) * 100
+    ret14 = (c / closes[-15] - 1) * 100
+    b = btc_closes
+    rel7 = ret7 - (b[-1] / b[-8] - 1) * 100
+    rel14 = ret14 - (b[-1] / b[-15] - 1) * 100
+    # VOLATILITY STATE — bandwidth percentile of own trailing 60d
+    def bw(i):
+        w = closes[i - 20:i]
+        m = sum(w) / 20
+        return 4 * statistics.pstdev(w) / m if m else 0
+    idx = list(range(len(closes) - 60, len(closes) + 1))
+    bws = [bw(i) for i in idx if i >= 20]
+    bw_now = bws[-1]
+    bw_pct = sum(1 for x in bws if x <= bw_now) / len(bws)
+    bws5 = bws[:-5] or bws
+    bw_5ago = bws[-6] if len(bws) >= 6 else bw_now
+    bw_pct_5ago = sum(1 for x in bws5 if x <= bw_5ago) / len(bws5)
+    # PARTICIPATION — signed volume share (directional)
+    def share(a, z):
+        num = sum((1 if closes[i] >= opens[i] else -1) * qv[i] for i in range(a, z))
+        den = sum(qv[a:z])
+        return num / den if den else 0
+    share14 = share(-14, 0)
+    share5_now, share5_prev = share(-5, 0), share(-10, -5)
+    avg_vol14 = sum(qv[-14:]) / 14
+    capitulation = any(
+        qv[i] >= 3 * avg_vol14 and closes[i] < opens[i]
+        and any(closes[j] >= opens[j] for j in range(i + 1, 0))
+        for i in range(-3, 0))
+    # LOCATION — Bollinger %B + VWAP position
+    sd = statistics.pstdev(closes[-20:])
+    pct_b = (c - (sma20 - 2 * sd)) / (4 * sd) if sd else 0.5
+    return {
+        "structure_up": hh and hl, "structure_down": (not hh) and (not hl),
+        "above_sma20": c > sma20,
+        "ret7_pct": ret7, "ret14_pct": ret14, "rel7_pct": rel7, "rel14_pct": rel14,
+        "bw_pct": bw_pct, "bw_pct_5ago": bw_pct_5ago, "bw_rising": bw_now > bw_5ago,
+        "share14": share14, "share5_now": share5_now, "share5_prev": share5_prev,
+        "capitulation": capitulation,
+        "pct_b": pct_b, "below_vwap": (vwap_dist_pct or 0) <= 0,
+        "avg_abs_daily_pct": avg,
+    }
+
+
+VOTE_NEED = {"PULLBACK": 3, "BREAKOUT": 3, "BASING": 4, "REVERSAL": 4}
+
+
+def setup_vote(setup, d):
+    """(vote dict) — which checklist items passed for this setup."""
+    if d is None:
+        return {"pass": False, "n_pass": 0, "need": VOTE_NEED.get(setup, 4),
+                "passed": [], "failed": ["insufficient history for dimensions"]}
+    if setup == "PULLBACK":
+        checks = {
+            "TREND up-structure + above SMA20": d["structure_up"] and d["above_sma20"],
+            "MOMENTUM 14d positive vs BTC": d["rel14_pct"] > 0,
+            "PARTICIPATION no distribution (share >= -0.2)": d["share14"] >= -0.2,
+            "LOCATION %B 0.15-0.55 and at/below VWAP":
+                0.15 <= d["pct_b"] <= 0.55 and d["below_vwap"],
+        }
+    elif setup == "BREAKOUT":
+        checks = {
+            "PARTICIPATION directional buying (share >= +0.3)": d["share14"] >= 0.3,
+            "VOLSTATE expansion from compression (<=40th pct, rising)":
+                d["bw_pct_5ago"] <= 0.40 and d["bw_rising"],
+            "TREND structure not down": not d["structure_down"],
+            "LOCATION %B >= 0.8 and above VWAP": d["pct_b"] >= 0.8 and not d["below_vwap"],
+        }
+    elif setup == "BASING":
+        checks = {
+            "VOLSTATE compressed (<= 20th pct)": d["bw_pct"] <= 0.20,
+            "PARTICIPATION selling exhausting (5d share improving)":
+                d["share5_now"] > d["share5_prev"],
+            "MOMENTUM 14d negative, decelerating (|7d| < 0.5x|14d|)":
+                d["ret14_pct"] < 0 and abs(d["ret7_pct"]) < 0.5 * abs(d["ret14_pct"]),
+            "LOCATION %B <= 0.20": d["pct_b"] <= 0.20,
+        }
+    elif setup == "REVERSAL":
+        checks = {
+            "MOMENTUM capitulative (7d <= -2.5x avg, worse than BTC)":
+                d["ret7_pct"] <= -2.5 * d["avg_abs_daily_pct"] and d["rel7_pct"] < 0,
+            "PARTICIPATION capitulation signature": d["capitulation"],
+            "VOLSTATE climax (>= 80th pct)": d["bw_pct"] >= 0.80,
+            "LOCATION %B <= 0.05": d["pct_b"] <= 0.05,
+        }
+    else:
+        return {"pass": False, "n_pass": 0, "need": 4, "passed": [],
+                "failed": [f"no checklist for {setup}"]}
+    passed = [k for k, v in checks.items() if v]
+    failed = [k for k, v in checks.items() if not v]
+    need = VOTE_NEED[setup]
+    return {"pass": len(passed) >= need, "n_pass": len(passed), "need": need,
+            "passed": passed, "failed": failed}
+
+
 def market_regime():
     """BTC context: UPTREND / RANGE / DOWNTREND from daily SMA20, plus 24h
     change. Printed on every scan and packet; NOT a gate (Pilot: observe
@@ -381,11 +504,13 @@ def market_regime():
     else:
         regime = "RANGE"
     return {"regime": regime, "btc_chg24_pct": round(chg24, 2),
-            "btc_last": last, "btc_sma20": round(sma20, 2)}
+            "btc_last": last, "btc_sma20": round(sma20, 2),
+            "_btc_closes": closes}  # for the MOMENTUM dimension (rel-BTC)
 
 
 def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
     regime = market_regime()
+    regime_pub = {k: v for k, v in regime.items() if not k.startswith("_")}
     print(f"MARKET REGIME: BTC {regime['regime']}, 24h {regime['btc_chg24_pct']:+.2f}% "
           f"(last {regime['btc_last']:g} vs SMA20 {regime['btc_sma20']:g})", file=sys.stderr)
     rows, r011 = source_a(floor)
@@ -414,6 +539,12 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
         c = source_c(row["symbol"], side=SCAN_SIDE)
         setup, setup_detail = classify_setup(row, b)
         rr = risk_reward(row, b, setup) if setup not in ("CHASE", "UNCLASSIFIED") else None
+        # R015 indicator vote (supersedes R007's source-count gate)
+        vote = None
+        if setup not in ("CHASE", "UNCLASSIFIED"):
+            dims = compute_dimensions(row.get("_daily") or [],
+                                      regime["_btc_closes"], row.get("vwap_dist_pct"))
+            vote = setup_vote(setup, dims)
         _place.append_jsonl(setups_log, {
             "ts": _place.now_iso(), "symbol": row["symbol"], "setup": setup,
             "detail": setup_detail, "blocked": setup in ("CHASE", "UNCLASSIFIED"),
@@ -432,6 +563,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "triggers": {"A": a_trig, "B": b["triggers"], "C": c["triggers"]},
             "setup": setup,
             "setup_detail": setup_detail,
+            "vote": vote,
             "structure": {
                 "sma20": row.get("sma20"), "sma20_prev5": row.get("sma20_prev5"),
                 "sma20_rising": row.get("sma20_rising"),
@@ -442,9 +574,12 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
                 "vol_expand": b["vol_expand"], "body_ratio": b["body_ratio"],
             },
             "rr": ({k: round(v, 6) for k, v in rr.items()} if rr else None),
-            "regime": regime,
-            "packet_worthy": (len(sources_triggering) >= 2
-                              and setup not in ("CHASE", "UNCLASSIFIED")),
+            "regime": regime_pub,
+            # R015 (2026-09-02): the indicator vote replaces the old
+            # two-triggering-sources gate. Triggers are still computed for
+            # evidence display and the confidence tier.
+            "packet_worthy": (setup not in ("CHASE", "UNCLASSIFIED")
+                              and vote is not None and vote["pass"]),
             "metrics": {
                 "vol_ratio_7d": row.get("vol_ratio_7d"),
                 "vol_expand": b.get("vol_expand"),
@@ -458,7 +593,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "evidence": [{"source": s, "text": t} for s, t in a_ev + b["evidence"] + c["evidence"]],
         })
     return {
-        "regime": regime,
+        "regime": regime_pub,
         "pairs_past_floor": len(rows),
         "floor_usdt": floor,
         "scanned_deep": min(top, len(rows)),

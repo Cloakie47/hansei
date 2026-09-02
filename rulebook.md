@@ -15,9 +15,10 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   address matches the canonical Binance-Peg or issuer contract for that asset.
   If the canonical contract cannot be determined, the signal is DISCARDED, not
   accepted. Ticker-string matches alone are never sufficient.
-- **R007** Evidence must draw on at least two structurally independent sources
+- ~~**R007** Evidence must draw on at least two structurally independent sources
   (cross-sectional, time series, order book, report). Multiple readings of one
-  source count as one.
+  source count as one.~~ Superseded by R015. The source-count was a crude proxy
+  for independent agreement; R015 measures the agreement directly.
 - **R008** Every asset outside the top 20 must pass a vetting check before it
   can be proposed. Contract-based assets are vetted with query-token-audit.
   Assets with no contract (native L1 coins) are vetted against Binance spot
@@ -47,3 +48,11 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   Target and stop are derived from market structure — recent swing highs and
   lows — never from fixed percentages. A candidate that cannot produce a
   structural target and stop is blocked, not estimated.
+- **R015** A packet requires its setup's indicator checklist to pass — 3 of 4
+  for PULLBACK and BREAKOUT, 4 of 4 for BASING and REVERSAL — drawn from five
+  dimensions verified pairwise-independent (all r < 0.7, measured on a
+  341-sample panel; LOCATION is the weakest at r 0.53-0.59 against three
+  others and is kept at full weight by Pilot decision, recorded for future
+  reviewers). The checklist renders on the packet; failures are logged with
+  the failing dimensions named. Exit packets are exempt — the vote qualifies
+  an entry setup, and an exit has none.
