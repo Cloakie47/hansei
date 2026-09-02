@@ -1,5 +1,42 @@
 # v3-vs-v2 shadow gap diagnosis — 2026-09-03. DIAGNOSIS ONLY, nothing changed.
 
+## POST-FIX UPDATE + A CORRECTION (later the same day)
+
+The Pilot approved both recommendations: floor-bindingness is now the
+third promotion criterion (canonical bar: docs/v3-promotion-criteria.md)
+and v3's R:R term is SYMMETRIC — same log scale, capped both ways
+(max(-0.045, min(0.045, 0.015*log2(rr/2)))). All 31 shadow samples re-run
+(additive recompute is exact: every sample sits far from the formula's
+floor and caps):
+
+- WITHIN-SETUP DISTRIBUTIONS (symmetric term):
+    PULLBACK: n=13, min 0.570, median 0.647, max 0.714 — 12/13 >= floor
+    BASING:   n=10, min 0.567, median 0.593, max 0.645 — 4/10 >= floor
+    BREAKOUT: n=8,  min 0.533, median 0.569, max 0.572 — 0/8 >= floor
+- FLOOR BINDING in favored setups: YES — 7 of 23 suppressed. Straddles.
+- FLOOR-CROSSERS: all 14 still cross. The symmetric term moved only the
+  three broken-structure PUMP samples (rr 0.68-0.69): 0.649-0.665 down to
+  0.626-0.642 — the right direction, but STILL above the floor; R014
+  remains their actual killer. Stated plainly: the symmetric term reduces
+  the reward for broken structure, it does not eliminate it. If the Pilot
+  wants broken structure floor-killed at R009, the penalty scale (0.015)
+  would need roughly tripling — not proposed, just quantified.
+- PEPE's 7.75:1 pullback: 0.652 unchanged (rr > 2, symmetry irrelevant),
+  still clears.
+
+CORRECTION, on the record: the original diagnosis below claims every
+favored-setup sample scored >= 0.60 with a minimum of 0.613. That was
+WRONG — a conclusion reasoned from the crossers list instead of a computed
+minimum. The actual minimums in the same log were 0.567 (BASING) and
+0.570 (PULLBACK): the floor was already partially binding for BASING
+before the fix, and criterion 3 was closer to met than the diagnosis
+implied. The recommendation survives the error (PULLBACK was 12/13 above
+the floor either way), but the claim did not, and this file now says so.
+
+Original diagnosis follows, uncorrected, as written.
+
+---
+
 Trigger: PUMP logged v2 56.8% / v3 66.5%, the largest gap on record.
 Sample: 31 shadow rows (all classified candidates since v3 shipped).
 

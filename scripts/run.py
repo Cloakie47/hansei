@@ -215,8 +215,12 @@ def confidence_v3(setup, n_sources, metrics, structure, rr_value):
         conf += 0.02 * _clamp(((s.get("body_ratio") or 0) - 2) / 3)
         if aligned:
             conf += 0.02
-    if rr_value and rr_value > 2:
-        conf += min(0.045, 0.015 * math.log2(rr_value / 2))
+    if rr_value:
+        # SYMMETRIC R:R term (Pilot-approved 2026-09-03): the same log scale
+        # both ways, capped both ways. R014 already blocks below 2:1 — this
+        # changes nothing about what is tradeable; it stops broken structure
+        # from carrying healthy confidence (a 0.68:1 was scoring 0.65+).
+        conf += max(-0.045, min(0.045, 0.015 * math.log2(rr_value / 2)))
     if imb and imb < 1:
         conf -= min(0.06, 0.03 * (1 / imb - 1))
     if m.get("spread_bps") is not None:
