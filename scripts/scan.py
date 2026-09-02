@@ -127,11 +127,26 @@ def source_a(floor=VOLUME_FLOOR):
             "high": float(t["highPrice"]),
             "low": float(t["lowPrice"]),
         })
-    # volume vs own 7d average, for the pairs that lead on change/vwap distance
-    rows.sort(key=lambda r: max(abs(r["chg_pct"]) / A_CHG_PCT,
-                                abs(r["vwap_dist_pct"]) / A_VWAP_DIST), reverse=True)
-    for r in rows[:TOP_CANDIDATES * 3]:
+    # RANKING (Pilot-directed 2026-09-02): by 7d and 14d trailing return —
+    # volatility-normalised per pair — NOT by 24h change. 24h change is noise
+    # and ranking on it made the scanner a top-movers screen. 24h change stays
+    # displayed. Daily klines are fetched for every floor-passer up front
+    # (the ranking needs them) and reused by the deep loop.
+    for r in rows:
         daily = get("klines", symbol=r["symbol"], interval="1d", limit=30)
+        r["_daily"] = daily
+        closes = [float(k[4]) for k in daily]
+        daily_chgs_all = [abs(float(k[4]) / float(k[1]) - 1) * 100 for k in daily[-15:-1]
+                         if float(k[1])]
+        avg = (sum(daily_chgs_all) / len(daily_chgs_all)) if daily_chgs_all else A_CHG_PCT
+        r["ret_7d_pct"] = (closes[-1] / closes[-8] - 1) * 100 if len(closes) >= 8 else 0.0
+        r["ret_14d_pct"] = (closes[-1] / closes[-15] - 1) * 100 if len(closes) >= 15 else 0.0
+        import math
+        r["rank_score"] = max(abs(r["ret_7d_pct"]) / (avg * math.sqrt(7)),
+                              abs(r["ret_14d_pct"]) / (avg * math.sqrt(14))) if avg else 0.0
+    rows.sort(key=lambda r: r["rank_score"], reverse=True)
+    for r in rows[:TOP_CANDIDATES * 3]:
+        daily = r.pop("_daily")
         prior7 = [float(k[7]) for k in daily[-8:-1]]  # quote vol, prior 7 days
         r["vol_ratio_7d"] = (r["quote_volume"] / (sum(prior7) / len(prior7))) if prior7 else None
         closes = [float(k[4]) for k in daily]
@@ -167,6 +182,8 @@ def a_evidence(row):
     ev.append(("A", f"ticker24hr all-pairs -> {row['symbol']} 24h {row['chg_pct']:+.2f}%, "
                     f"quote volume {row['quote_volume']/1e6:.1f}m USDT "
                     f"(own-volatility trigger threshold {chg_thr:.1f}%)"))
+    ev.append(("A", f"trailing return (ranking basis) -> 7d {row.get('ret_7d_pct', 0):+.2f}%, "
+                    f"14d {row.get('ret_14d_pct', 0):+.2f}%"))
     vr = row.get("vol_ratio_7d")
     if vr is not None:
         if vr >= A_VOL_RATIO:
