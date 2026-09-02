@@ -154,6 +154,92 @@ def auto_vet(symbol):
     return None  # unknown -> draft carries no vetting -> R008 blocks, fail-closed
 
 
+# Setup-aware confidence v3 — Pilot-approved as drafted 2026-09-02
+# (docs/proposed-setup-aware-confidence.md). SHADOW MODE: v2 remains the
+# live scorer until the anti-clustering check passes on a genuinely quiet
+# day; every classified candidate gets both scores logged to
+# logs/confidence-shadow.jsonl for comparison. Tier base 0.58/0.62 and
+# R009's 60% floor untouched.
+
+SHADOW_LOG = ROOT / "logs" / "confidence-shadow.jsonl"
+
+
+def _clamp(x, lo=0.0, hi=1.0):
+    return max(lo, min(hi, x))
+
+
+def confidence_v3(setup, n_sources, metrics, structure, rr_value):
+    import math
+    conf = CONF_V2_BASE_BY_TIER.get(min(n_sources, 3), 0.58)
+    s, m = structure, metrics
+    ve = s.get("vol_expand") or 0
+    avg = s.get("avg_abs_daily_pct") or 4.0
+    rp = s.get("range_pos", 0.5)
+    imb, aligned = m.get("imbalance"), m.get("aligned")
+    chg24 = m.get("chg24", 0)
+    if setup == "PULLBACK":
+        if s.get("sma20"):
+            zone = 1.5 * avg
+            dist = abs(s["last"] - s["sma20"]) / s["sma20"] * 100
+            conf += 0.04 * _clamp(1 - dist / zone)
+        conf += 0.03 * _clamp((1.0 - ve) / 0.5)
+        if s.get("sma20") and s.get("sma20_prev5"):
+            slope_pct = (s["sma20"] / s["sma20_prev5"] - 1) * 100
+            conf += 0.03 * _clamp(slope_pct / (2 * avg))
+        if ve >= 1.5:
+            conf -= 0.02
+        if aligned:
+            conf += 0.02
+    elif setup == "BASING":
+        conf += 0.04 * _clamp((0.8 - ve) / 0.4)
+        conf += 0.03 * _clamp((0.25 - rp) / 0.25)
+        conf += 0.03 * _clamp(1 - abs(chg24) / avg)
+        conf -= 0.05 * _clamp((ve - 0.8) / 0.7)
+        if aligned:
+            conf += 0.02
+    elif setup == "BREAKOUT":
+        conf += 0.06 * _clamp((ve - 1.5) / 3.5)
+        if s.get("consol_high") and s.get("consol_low") and s.get("last"):
+            width = (s["consol_high"] - s["consol_low"]) / s["last"] * 100
+            conf += 0.03 * _clamp((3 * avg - width) / (3 * avg))
+        if aligned and imb:
+            conf += 0.03 * _clamp((imb - 1) / 1.5)
+    elif setup == "REVERSAL":
+        conf += 0.04 * _clamp((ve - 1.5) / 2.5)
+        chg5 = abs(s.get("chg_5d_pct") or 0)
+        conf += 0.03 * _clamp((chg5 / avg - 2.5) / 2.5)
+        conf += 0.02 * _clamp(((s.get("body_ratio") or 0) - 2) / 3)
+        if aligned:
+            conf += 0.02
+    if rr_value and rr_value > 2:
+        conf += min(0.045, 0.015 * math.log2(rr_value / 2))
+    if imb and imb < 1:
+        conf -= min(0.06, 0.03 * (1 / imb - 1))
+    if m.get("spread_bps") is not None:
+        conf -= min(0.05, m["spread_bps"] / 200)
+    cap = CONF_V2_CAP3 if n_sources >= 3 else CONF_V2_CAP2
+    return round(max(0.40, min(conf, cap)), 3)
+
+
+def shadow_score(cand):
+    """Log v2 and v3 side by side for every classified candidate."""
+    if cand.get("setup") in (None, "CHASE", "UNCLASSIFIED") or "metrics" not in cand:
+        return None
+    trig = {s: t for s, t in cand["triggers"].items()
+            if t and not (s == "C" and t == ["wide-spread"])}
+    n = len(trig)
+    m = dict(cand["metrics"])
+    m["chg24"] = cand["chg_pct"]
+    rr_value = cand["rr"]["rr"] if cand.get("rr") else None
+    v2 = confidence_v2(n, cand["metrics"])
+    v3 = confidence_v3(cand["setup"], n, m, cand.get("structure", {}), rr_value)
+    entry = {"ts": place.now_iso(), "symbol": cand["symbol"], "setup": cand["setup"],
+             "n_sources": n, "rr": round(rr_value, 2) if rr_value else None,
+             "v2": v2, "v3": v3}
+    place.append_jsonl(SHADOW_LOG, entry)
+    return entry
+
+
 def mechanical_draft(cand, stake, use_v1=False):
     trig = {s: t for s, t in cand["triggers"].items()
             if t and not (s == "C" and t == ["wide-spread"])}
@@ -201,6 +287,16 @@ def cmd_scan(args=()):
     print(f"pairs past floor: {result['pairs_past_floor']} | deep: {result['scanned_deep']} "
           f"| packet-worthy: {len(result['packet_worthy'])}")
     packets, skipped = [], []
+    shadows = []
+    for cand in result["candidates"]:
+        sh = shadow_score(cand)  # v2/v3 side-by-side for every classified candidate
+        if sh:
+            shadows.append(sh)
+    if shadows:
+        print("shadow scores (v2 live / v3 shadow):")
+        for sh in shadows:
+            print(f"  {sh['symbol']}: {sh['setup']} {sh['n_sources']}-source "
+                  f"rr={sh['rr']} v2={sh['v2']:.3f} v3={sh['v3']:.3f}")
     for cand in result["candidates"]:
         if not cand["packet_worthy"]:
             continue

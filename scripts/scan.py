@@ -145,6 +145,7 @@ def source_a(floor=VOLUME_FLOOR):
             sma20 = sum(closes[-20:]) / 20
             sma20_prev5 = sum(closes[-25:-5]) / 20
             r["sma20"] = sma20
+            r["sma20_prev5"] = sma20_prev5  # real slope for v3 trend-quality
             r["sma20_rising"] = sma20 > sma20_prev5
             r["chg_3d_pct"] = (closes[-1] / closes[-4] - 1) * 100
             r["chg_5d_pct"] = (closes[-1] / closes[-6] - 1) * 100
@@ -407,7 +408,8 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "setup": setup,
             "setup_detail": setup_detail,
             "structure": {
-                "sma20": row.get("sma20"), "sma20_rising": row.get("sma20_rising"),
+                "sma20": row.get("sma20"), "sma20_prev5": row.get("sma20_prev5"),
+                "sma20_rising": row.get("sma20_rising"),
                 "chg_3d_pct": row.get("chg_3d_pct"), "chg_5d_pct": row.get("chg_5d_pct"),
                 "avg_abs_daily_pct": row.get("avg_abs_daily_pct"),
                 "consol_high": row.get("consol_high"), "consol_low": row.get("consol_low"),

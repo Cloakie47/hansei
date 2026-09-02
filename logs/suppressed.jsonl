@@ -33,3 +33,5 @@
 {"ts": "2026-09-01T19:57:14Z","rule": "R009","symbol": "NEARUSDT","side": "BUY","confidence": 0.573,"evidence_sources": ["A","B","C"],"reason": "confidence 57.3% < 60.0% floor — suppressed to NO_PROPOSAL"}
 {"ts": "2026-09-01T20:18:23Z","rule": "R014","symbol": "LTCUSDT","side": "BUY","confidence": 0.65,"evidence_sources": ["A","B"],"reason": "R014: no structural target/stop could be derived — blocked, not estimated","setup": "PULLBACK"}
 {"ts": "2026-09-01T20:18:23Z","rule": "R014","symbol": "LTCUSDT","side": "BUY","confidence": 0.65,"evidence_sources": ["A","B"],"reason": "R014: reward-to-risk 1.40:1 below 2:1 (target 107, stop 95)","rr": 1.4,"setup": "PULLBACK"}
+{"ts": "2026-09-02T04:51:03Z","rule": "R009","symbol": "TUTUSDT","side": "BUY","confidence": 0.563,"evidence_sources": ["A","B","C"],"reason": "confidence 56.3% < 60.0% floor — suppressed to NO_PROPOSAL","rr": 10.339,"setup": "BASING"}
+{"ts": "2026-09-02T04:51:03Z","rule": "R009","symbol": "NEARUSDT","side": "BUY","confidence": 0.57,"evidence_sources": ["A","B","C"],"reason": "confidence 57.0% < 60.0% floor — suppressed to NO_PROPOSAL","rr": 3.13,"setup": "PULLBACK"}
