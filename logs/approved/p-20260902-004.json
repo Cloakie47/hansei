@@ -1,0 +1,47 @@
+{
+  "symbol": "BNBUSDT",
+  "side": "SELL",
+  "type": "MARKET",
+  "quantity": 0.011,
+  "exit": true,
+  "exit_reason": "DRILL: closing the exit-path exercise position (PAPER buy p-20260902-003); validates the full SELL flow before any live fill",
+  "confidence": 0.62,
+  "evidence": [
+    {
+      "source": "B",
+      "text": "klines 1h x168 -> price at 28% of 7d range (674.6 - 719.99)"
+    },
+    {
+      "source": "B",
+      "text": "last 24h kline volume 1.08x prior 6d daily avg"
+    },
+    {
+      "source": "B",
+      "text": "current 1h candle body 0.96x avg of prior 24"
+    },
+    {
+      "source": "C",
+      "text": "depth ±1% of mid -> bids 503k / asks 393k USDT, imbalance 1.28"
+    },
+    {
+      "source": "C",
+      "text": "spread 0.1 bps"
+    },
+    {
+      "source": "POSITION",
+      "text": "open since 2026-09-02T17:45:49Z, 0.011 BNB held"
+    }
+  ],
+  "signals_used": [
+    "spot_klines",
+    "spot_depth",
+    "fills.jsonl"
+  ],
+  "thesis": "Exit of the open BNBUSDT position: DRILL: closing the exit-path exercise position (PAPER buy p-20260902-003); validates the full SELL flow before any live fill",
+  "invalidation": "Not applicable — closing order; the position's own invalidation/time stop triggered this exit.",
+  "size_reasoning": "Full position close: 0.011 base units held.",
+  "max_hold_hours": 24,
+  "setup": "EXIT",
+  "setup_detail": "DRILL: closing the exit-path exercise position (PAPER buy p-20260902-003); validates the full SELL flow before any live fill",
+  "id": "p-20260902-004"
+}

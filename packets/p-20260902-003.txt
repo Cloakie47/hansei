@@ -1,0 +1,47 @@
+━━━ DECISION PACKET p-20260902-003 ━━━
+
+PROPOSAL   BUY 8 USDT of BNBUSDT (spot, market)
+CONFIDENCE 62%
+SETUP      PULLBACK — DRILL: well-formed synthetic pullback for the exit-path exercise
+R:R        2.5 : 1 (target 728, stop 668, entry ref 685)
+REGIME     BTC UPTREND, 24h -0.20% (context only, not a gate)
+INDICATOR VOTE (3 of 4, need 3) — R015
+  [PASS] TREND up-structure + above SMA20 (drill)
+  [PASS] MOMENTUM 14d positive vs BTC (drill)
+  [PASS] PARTICIPATION no distribution (drill)
+  [fail] LOCATION %B (drill)
+THESIS     DRILL: exit-path exercise buy — a well-formed synthetic that exists to be closed.
+
+EVIDENCE
+  • [A] DRILL evidence — cross-sectional
+  • [B] DRILL evidence — time series
+  • [C] DRILL evidence — order book
+  • Vetting: N/A (top-20)
+
+RULES CHECKED
+  R001 Never propose more than 20% of sub-account b ...... OK (8.00 of 40.00 USDT = 20.0% [balance via spot_getAccount(fresh)])
+  R003 Do not re-propose an idea rejected in the la ...... OK (no rejected proposal for this symbol+side in last 24h)
+  R004 Any restriction on a tool must also cover to ...... OK (tooling rule — enforced in place.py (assert_paper_safe + tool_execute log))
+  R005 Only propose assets that exist as an active ....... OK (enforced at ingest (scripts/ingest.py) — on-chain signals filtered before packets)
+  R006 A signal counts as evidence for a spot pair ....... OK (enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed)
+  R008 Every asset outside the top 20 must pass a v ...... OK (N/A — BNB is top-20, vetting not required)
+  R009 A draft with confidence below 60% is emitted ...... OK (confidence 62% >= 60% floor)
+  R010 No new packet may be generated for a symbol+ ...... OK (no pending packet for this symbol+side)
+  R011 Tokenized equity and RWA pairs (bstocks) are ...... OK (enforced at ingest (scan.py TRD_GRP_261 marker) — bstocks never reach drafts)
+  R012 Every packet must state a complete exit plan ...... OK (invalidation stated + 72h time stop)
+  R013 Maximum hold is 72 hours. When an open posit ...... OK (max hold 72h <= 72h)
+  R014 No packet may be generated with a reward-to- ...... OK (R:R 2.53:1 (target 728, stop 668, structural levels))
+  R016 Pairs whose RAW average daily move exceeds 1 ...... OK (enforced at ingest (scan.py) — pairs over 12% raw avg daily move never reach drafts)
+  R015 A packet requires its setup's indicator chec ...... OK (3 of 4 checks passed (need 3))
+
+INVALIDATION
+  1h close below 668 (drill stop).
+
+TIME STOP
+  72h maximum hold (R013) — exit proposed at the next scan after expiry, whichever of invalidation/time stop comes first.
+
+SIZE REASONING
+  8 USDT = 20% of balance (drill).
+
+━━━ Pilot: y / n ━━━
+If n, one code please: SIZE / TIMING / CONVICTION / RISK / DUPLICATE / ASSET / OTHER

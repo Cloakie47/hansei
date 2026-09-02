@@ -1,0 +1,54 @@
+{
+  "symbol": "BNBUSDT",
+  "side": "BUY",
+  "type": "MARKET",
+  "quoteOrderQty": 8,
+  "confidence": 0.62,
+  "setup": "PULLBACK",
+  "setup_detail": "DRILL: well-formed synthetic pullback for the exit-path exercise",
+  "vote": {
+    "pass": true,
+    "n_pass": 3,
+    "need": 3,
+    "passed": [
+      "TREND up-structure + above SMA20 (drill)",
+      "MOMENTUM 14d positive vs BTC (drill)",
+      "PARTICIPATION no distribution (drill)"
+    ],
+    "failed": [
+      "LOCATION %B (drill)"
+    ]
+  },
+  "rr": {
+    "entry": 685.0,
+    "stop": 668.0,
+    "target": 728.0,
+    "rr": 2.53
+  },
+  "market_regime": {
+    "regime": "UPTREND",
+    "btc_chg24_pct": -0.2
+  },
+  "evidence": [
+    {
+      "source": "A",
+      "text": "DRILL evidence — cross-sectional"
+    },
+    {
+      "source": "B",
+      "text": "DRILL evidence — time series"
+    },
+    {
+      "source": "C",
+      "text": "DRILL evidence — order book"
+    }
+  ],
+  "signals_used": [
+    "drill"
+  ],
+  "thesis": "DRILL: exit-path exercise buy — a well-formed synthetic that exists to be closed.",
+  "invalidation": "1h close below 668 (drill stop).",
+  "size_reasoning": "8 USDT = 20% of balance (drill).",
+  "max_hold_hours": 72,
+  "id": "p-20260902-003"
+}
