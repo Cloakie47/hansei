@@ -230,7 +230,7 @@ def shadow_score(cand):
     if cand.get("setup") in (None, "CHASE", "UNCLASSIFIED") or "metrics" not in cand:
         return None
     import scan as scanmod
-    n = len(scanmod.trigger_families(cand["triggers"]))  # families, not sources
+    n = scanmod.independent_source_count(cand["triggers"])  # deduped sources
     m = dict(cand["metrics"])
     m["chg24"] = cand["chg_pct"]
     rr_value = cand["rr"]["rr"] if cand.get("rr") else None
@@ -313,7 +313,7 @@ def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
     # Tier counts distinct signal FAMILIES, not raw sources: A-vol +
     # B-vol-expand is ONE volume signal, not two (2026-09-02 fix).
     import scan as scanmod
-    n = len(scanmod.trigger_families(cand["triggers"]))
+    n = scanmod.independent_source_count(cand["triggers"])
     if use_v1 or "metrics" not in cand:
         conf = MECH_CONFIDENCE.get(min(n, 3), 0.50)
     else:

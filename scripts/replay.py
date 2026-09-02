@@ -177,7 +177,7 @@ def analyse(symbol, t_ms):
             import run as runmod
             # families, not sources: 'vol' (A) and 'vol-expand' (B) are the
             # same quantity and count once (2026-09-02 fix)
-            n_avail = len(scanmod.trigger_families({"A": a_trig, "B": b_trig}))
+            n_avail = scanmod.independent_source_count({"A": a_trig, "B": b_trig})
             metrics = {"vol_ratio_7d": vol_ratio, "vol_expand": vol_ratio,
                        "imbalance": None, "aligned": None, "spread_bps": None,
                        "chg24": chg24}

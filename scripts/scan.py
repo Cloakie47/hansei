@@ -517,6 +517,26 @@ def trigger_families(triggers_by_source):
     return fams
 
 
+def independent_source_count(triggers_by_source):
+    """Sources contributing at least one NEW measured quantity, in A/B/C
+    order. This DEDUPLICATES (B triggering only vol-expand after A's vol
+    adds nothing) and can never exceed the plain source count — the first
+    'families' implementation multiplied one source's facets into extra
+    signals, which loosened tiers; caught in the historical re-score and
+    corrected the same day (2026-09-02)."""
+    seen, n = set(), 0
+    for src in ("A", "B", "C"):
+        fams = set()
+        for t in (triggers_by_source or {}).get(src) or []:
+            if t == "wide-spread":
+                continue
+            fams.add(TRIGGER_FAMILY.get(t, t))
+        if fams - seen:
+            n += 1
+        seen |= fams
+    return n
+
+
 def breakout_retest_held(row):
     """BREAKOUT quality (v3 +0.03, Pilot-approved): broke the consolidation
     high, returned to within 0.5x own avg daily move of the level within 5
