@@ -310,6 +310,16 @@ def classify_setup(row, b):
             and ((b["vol_expand"] or 0) >= B_VOL_EXPAND or (b.get("body_ratio") or 0) >= 2)):
         return "REVERSAL", (f"extended decline ({chg5:+.1f}% 5d vs avg {avg:.1f}%), "
                             f"at {rp:.0%} of range on elevated volume")
+    if (chg5 is not None and chg5 <= -BASING_DECLINE_MULT * avg
+            and rp <= BASING_RANGE_MAX
+            and (b["vol_expand"] or 999) <= BASING_VOL_MAX
+            and abs(chg24) <= BASING_CALM_MULT * avg):
+        return "BASING", (f"declined {chg5:+.1f}% (5d, vs avg {avg:.1f}%), now at "
+                          f"{rp:.0%} of range on {b['vol_expand']:.2f}x quiet volume, "
+                          f"day move {chg24:+.1f}% within 1x avg — accumulation, not capitulation")
+    # DELIBERATE EXCLUSION (Pilot-confirmed 2026-09-02): uptrend continuation
+    # WITHOUT a pullback stays UNCLASSIFIED. It is the chase-guard's
+    # neighbour — do not "fix" this by adding a continuation category.
     return "UNCLASSIFIED", (f"fits no setup: chg24 {chg24:+.1f}%, 3d {chg3:+.1f}%, "
                             f"range {rp:.0%}, trend_up={trend_up} — blocked fail-closed")
 
@@ -321,8 +331,8 @@ def risk_reward(row, b, setup):
     for REVERSAL. Returns None when entry <= stop (broken structure)."""
     entry = b["last"]
     stop = b["swing_low_48h"]
-    if setup == "REVERSAL":
-        target = (b["hi_7d"] + b["lo_7d"]) / 2
+    if setup in ("REVERSAL", "BASING"):
+        target = (b["hi_7d"] + b["lo_7d"]) / 2  # conservative: range mid first
     else:
         target = b["hi_7d"]
     if entry <= stop or target <= entry:
