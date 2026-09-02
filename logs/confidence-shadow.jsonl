@@ -18,3 +18,9 @@
 {"ts": "2026-09-02T18:42:14Z","symbol": "UNIUSDT","setup": "BREAKOUT","n_sources": 1,"rr": 0.9,"v2": 0.601,"v3": 0.587}
 {"ts": "2026-09-02T18:42:14Z","symbol": "PUMPUSDT","setup": "PULLBACK","n_sources": 2,"rr": 0.68,"v2": 0.568,"v3": 0.662}
 {"ts": "2026-09-02T18:42:14Z","symbol": "PEPEUSDT","setup": "BASING","n_sources": 1,"rr": 5.29,"v2": 0.53,"v3": 0.613}
+{"ts": "2026-09-02T19:14:07Z","symbol": "TUSDT","setup": "BREAKOUT","n_sources": 1,"rr": 0.27,"v2": 0.59,"v3": 0.58}
+{"ts": "2026-09-02T19:14:07Z","symbol": "UNIUSDT","setup": "BREAKOUT","n_sources": 1,"rr": 0.89,"v2": 0.601,"v3": 0.587}
+{"ts": "2026-09-02T19:14:07Z","symbol": "TRXUSDT","setup": "BASING","n_sources": 0,"rr": 1.76,"v2": 0.565,"v3": 0.59}
+{"ts": "2026-09-02T19:14:07Z","symbol": "PUMPUSDT","setup": "PULLBACK","n_sources": 3,"rr": 0.68,"v2": 0.626,"v3": 0.723}
+{"ts": "2026-09-02T19:14:07Z","symbol": "PEPEUSDT","setup": "PULLBACK","n_sources": 1,"rr": 7.75,"v2": 0.53,"v3": 0.652}
+{"ts": "2026-09-02T19:14:07Z","symbol": "TRUMPUSDT","setup": "PULLBACK","n_sources": 2,"rr": 7.07,"v2": 0.551,"v3": 0.657}
