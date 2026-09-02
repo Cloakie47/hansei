@@ -54,3 +54,18 @@ exclusions (continuation), ~3 are the tape (downtrends/knives). So roughly
 7 of 12 point at definitions, 5 at reality. Pilot decisions available:
 scale the support zone per-pair (recommended), add BASING and/or
 CONSOLIDATION-APPROACH as categories, or leave all as-is.
+
+## Pilot decisions (2026-09-02)
+
+1. APPROVED — support zone scaled per-pair: within 1.5x the pair's own
+   average daily move of the SMA20. Implemented.
+2. APPROVED — BASING added as a category (Unit-drafted thresholds, stated
+   in the commit: 5d decline >= 2.0x own avg, bottom quarter of range,
+   volume <= 0.8x prior, |24h| <= 1x avg). Implemented.
+3. REJECTED — CONSOLIDATION-APPROACH. Pilot's reason, recorded: coiling
+   under a level is a watchlist state, not a trade — no entry, no stop,
+   nothing has happened yet. Not implemented; do not re-propose without
+   new evidence that approaches convert at a rate worth pre-positioning.
+4. CONFIRMED DELIBERATE EXCLUSION — uptrend continuation without a
+   pullback stays UNCLASSIFIED (it is the chase-guard's neighbour). A
+   guard comment now sits in classify_setup so nobody "fixes" it later.
