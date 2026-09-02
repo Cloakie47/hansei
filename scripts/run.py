@@ -198,10 +198,14 @@ def confidence_v3(setup, n_sources, metrics, structure, rr_value):
         if aligned:
             conf += 0.02
     elif setup == "BREAKOUT":
-        conf += 0.06 * _clamp((ve - 1.5) / 3.5)
+        # Rebalanced 2026-09-02 for the retest term (respects the +0.10 cap):
+        # volume 0.06 -> 0.05, tightness 0.03 -> 0.02, retest +0.03.
+        conf += 0.05 * _clamp((ve - 1.5) / 3.5)
         if s.get("consol_high") and s.get("consol_low") and s.get("last"):
             width = (s["consol_high"] - s["consol_low"]) / s["last"] * 100
-            conf += 0.03 * _clamp((3 * avg - width) / (3 * avg))
+            conf += 0.02 * _clamp((3 * avg - width) / (3 * avg))
+        if s.get("retest_held"):
+            conf += 0.03  # broke, returned to the level, held it
         if aligned and imb:
             conf += 0.03 * _clamp((imb - 1) / 1.5)
     elif setup == "REVERSAL":

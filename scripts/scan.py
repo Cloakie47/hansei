@@ -439,6 +439,32 @@ def compute_dimensions(daily, btc_closes, vwap_dist_pct):
 VOTE_NEED = {"PULLBACK": 3, "BREAKOUT": 3, "BASING": 4, "REVERSAL": 4}
 
 
+def breakout_retest_held(row):
+    """BREAKOUT quality (v3 +0.03, Pilot-approved): broke the consolidation
+    high, returned to within 0.5x own avg daily move of the level within 5
+    daily bars, and closed back above it. A held retest converts resistance
+    to support. Returns True/False, or None without enough data."""
+    daily = row.get("_daily")
+    level = row.get("consol_high")
+    avg = row.get("avg_abs_daily_pct")
+    if not daily or not level or not avg or len(daily) < 6:
+        return None
+    band = level * (1 + 0.5 * avg / 100)
+    lo_band = level * (1 - 0.5 * avg / 100)
+    recent = daily[-5:]
+    touched = False
+    for i, k in enumerate(recent):
+        low, close = float(k[3]), float(k[4])
+        if lo_band <= low <= band:
+            touched = True
+            if close >= level:
+                return True
+            for k2 in recent[i + 1:]:
+                if float(k2[4]) >= level:
+                    return True
+    return False if touched else False
+
+
 def setup_vote(setup, d):
     """(vote dict) — which checklist items passed for this setup."""
     if d is None:
@@ -565,6 +591,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "setup_detail": setup_detail,
             "vote": vote,
             "structure": {
+                "retest_held": breakout_retest_held(row) if setup == "BREAKOUT" else None,
                 "sma20": row.get("sma20"), "sma20_prev5": row.get("sma20_prev5"),
                 "sma20_rising": row.get("sma20_rising"),
                 "chg_3d_pct": row.get("chg_3d_pct"), "chg_5d_pct": row.get("chg_5d_pct"),
