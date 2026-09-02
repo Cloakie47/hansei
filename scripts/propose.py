@@ -392,6 +392,14 @@ def render_packet(pid, draft, checks):
     if reg:
         lines.append(f"REGIME     BTC {reg['regime']}, 24h {reg['btc_chg24_pct']:+.2f}% "
                      f"(context only, not a gate)")
+        # Loud warning, not a gate (Pilot-directed 2026-09-03): a BUY into a
+        # falling BTC tape deserves a flag the Pilot cannot miss.
+        if draft.get("side") == "BUY" and not draft.get("exit") and (
+                reg.get("regime") == "DOWNTREND" or (reg.get("btc_chg24_pct") or 0) <= -3):
+            lines.append("!! REGIME WARNING: BUY proposed while BTC is "
+                         + ("in a confirmed DOWNTREND" if reg.get("regime") == "DOWNTREND"
+                            else f"down {reg['btc_chg24_pct']:+.2f}% on the day")
+                         + " — alt longs carry beta to this. Not gated; your call.")
     vote = draft.get("vote")
     if isinstance(vote, dict):
         lines.append(f"INDICATOR VOTE ({vote['n_pass']} of 4, need {vote['need']}) — R015")
@@ -573,6 +581,7 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False,
         "audit_passed": pending["audit_passed"],
         "vetting_path": pending.get("vetting_path"),
         "setup": draft.get("setup"),
+        "regime": (draft.get("market_regime") or {}).get("regime"),
         "rr": (round(draft["rr"]["rr"], 2)
                if isinstance(draft.get("rr"), dict) and draft["rr"].get("rr") is not None
                else None),
