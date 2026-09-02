@@ -152,4 +152,3 @@ session, reconcile by hand so the record stays honest:
 - Every write here is real. If any number looks wrong at the Binance
   confirmation prompt, cancel — the 72h time stop still protects the
   position, and a missed OCO is recoverable; a wrong one placed is not.
-```
