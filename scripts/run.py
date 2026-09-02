@@ -656,6 +656,9 @@ def main(argv):
         return cmd_positions()
     if cmd == "exit":
         return cmd_exit(argv[2:])
+    if cmd == "replay":
+        import replay
+        return replay.main(["replay.py"] + argv[2:])
     print(__doc__)
     return 1
 
