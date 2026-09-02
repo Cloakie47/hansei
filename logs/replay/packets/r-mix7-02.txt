@@ -1,0 +1,15 @@
+━━━ REPLAY PACKET r-mix7-02 ━━━  (DRILL — historical, anonymised, not a live proposal)
+
+PROPOSAL   BUY [stake] USDT of SYM-23 (spot, market)
+CONFIDENCE 57%  (v3, A+B evidence only — C-dependent terms zero, no book history)
+THESIS     SYM-23 moved +7.39% in its trailing 24h (own-volatility threshold 4.5%), 24h volume 2.32x its prior average, sitting at 83% of its 7-day range.
+
+EVIDENCE
+  • [A] cross-sectional -> 24h +7.39% vs threshold 4.5%; volume 2.32x prior avg (33.0m USDT); triggers: ['chg', 'vol']
+  • [B] time series -> 83% of 7d range; current candle body 1.06x prior 24 avg; triggers: ['vol-expand']
+  • [C] unavailable in replay (no historical order book)
+
+INVALIDATION
+  The triggering excursion reversing within 24h.
+
+━━━ Pilot: python scripts/replay.py verdict r-mix7-02 y|n [code] ━━━

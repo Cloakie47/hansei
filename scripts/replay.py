@@ -194,16 +194,25 @@ def analyse(symbol, t_ms):
             "outcome": outcome}
 
 
-def render(rid, alias, f, conf):
+def render(rid, alias, f, conf, blind=False):
+    # blind=True (mixed calibration sessions): drop the SETUP and R:R lines —
+    # they encode the live system's own verdict and would give away
+    # good-vs-bad. The Pilot judges the raw A/B evidence, which is exactly
+    # the "modest up-move, elevated volume, upper range" shape whose
+    # approval the drill is meant to test.
     rr = f.get("rr")
-    lines = [
+    head = [
         f"━━━ REPLAY PACKET {rid} ━━━  (DRILL — historical, anonymised, not a live proposal)",
         "",
         f"PROPOSAL   BUY [stake] USDT of {alias} (spot, market)",
         f"CONFIDENCE {conf:.0%}  (v3, A+B evidence only — C-dependent terms zero, no book history)",
-        f"SETUP      {f.get('setup')} — {f.get('setup_detail', '')}",
-    ] + ([f"R:R        {rr['rr']:.1f} : 1 (target {rr['target']:g}, stop {rr['stop']:g}, "
-          f"entry ref {rr['entry']:g})"] if rr else []) + [
+    ]
+    if not blind:
+        head.append(f"SETUP      {f.get('setup')} — {f.get('setup_detail', '')}")
+        if rr:
+            head.append(f"R:R        {rr['rr']:.1f} : 1 (target {rr['target']:g}, "
+                        f"stop {rr['stop']:g}, entry ref {rr['entry']:g})")
+    lines = head + [
         f"THESIS     {alias} moved {f['chg24_pct']:+.2f}% in its trailing 24h "
         f"(own-volatility threshold {f['chg_thr']:.1f}%), 24h volume "
         f"{(f['vol_ratio'] or 0):.2f}x its prior average, sitting at "
@@ -291,6 +300,89 @@ def cmd_new(args):
     return 0
 
 
+def cmd_mixed(args):
+    """Blind calibration session with a DELIBERATE quality mix — genuine
+    setups AND chase-shaped candidates — drawn from several real historical
+    windows. Unlike `new`, it does NOT gate on the full spec: the point is
+    to give the Pilot rejections to make, so the drill stats mean something.
+    Each packet stores the live system's own verdict (would_pass + why) as
+    hidden ground truth for later comparison; the packet the Pilot sees is
+    blind. Renders in the same format as `new` so it is indistinguishable.
+
+    Selection per window: the single best full-gate passer (if any) plus the
+    highest-ranked CHASE/vote-fail candidate — a matched good/bad pair — so
+    the session is genuinely mixed by construction, not by luck."""
+    seed = int(args[args.index("--seed") + 1]) if "--seed" in args else 42
+    windows = [int(x) for x in args[args.index("--windows") + 1].split(",")] \
+        if "--windows" in args else [22, 34, 51]
+    rng = random.Random(seed)
+    sid = f"mix{seed}"
+    session = {"sid": sid, "seed": seed, "spec": "classifier-v3-mixed",
+               "windows": windows, "packets": {}, "mapping": {}, "t_by_rid": {}}
+    picks = []  # (feat, t_ms, kind)
+    pairs, _ = scanmod.active_usdt_pairs()
+    for days in windows:
+        t_ms = int((datetime.now(timezone.utc) - timedelta(days=days))
+                   .replace(minute=0, second=0, microsecond=0).timestamp() * 1000)
+        tickers = get("ticker/24hr")
+        universe = sorted(t["symbol"] for t in tickers
+                          if t["symbol"] in pairs
+                          and float(t["quoteVolume"]) >= scanmod.VOLUME_FLOOR)
+        feats = []
+        for sym in universe:
+            try:
+                f = analyse(sym, t_ms)
+            except Exception:
+                f = None
+            if f:
+                feats.append(f)
+        feats.sort(key=lambda f: abs(f["chg24_pct"]) / f["chg_thr"], reverse=True)
+        good = next((f for f in feats
+                     if f.get("setup") not in ("CHASE", "UNCLASSIFIED")
+                     and f.get("vote") and f["vote"]["pass"]
+                     and f.get("rr") and f["rr"]["rr"] >= 2.0
+                     and (f.get("v3") or 0) >= FLOOR), None)
+        bad = next((f for f in feats
+                    if f.get("setup") == "CHASE"
+                    or (f.get("setup") not in ("UNCLASSIFIED",)
+                        and f.get("vote") and not f["vote"]["pass"])), None)
+        if good:
+            picks.append((good, t_ms, "would-pass"))
+        if bad and bad is not good:
+            picks.append((bad, t_ms, "would-reject"))
+    rng.shuffle(picks)
+    aliases = [f"SYM-{i:02d}" for i in range(1, len(picks) + 20)]
+    rng.shuffle(aliases)
+    n = 0
+    for (f, t_ms, kind), alias in zip(picks[:6], aliases):
+        n += 1
+        rid = f"r-{sid}-{n:02d}"
+        conf = f.get("v3") or CONF_PARTIAL
+        render(rid, alias, f, conf, blind=True)
+        session["packets"][rid] = {
+            "alias": alias, "confidence": conf, "setup": f.get("setup"),
+            "rr": round(f["rr"]["rr"], 2) if f.get("rr") else None,
+            "ground_truth": kind,
+            "live_verdict": ("would_pass_all_gates" if kind == "would-pass"
+                             else f"live system BLOCKS: {f.get('setup')}"
+                             + (f", vote {f['vote']['n_pass']}/{f['vote']['need']}"
+                                if f.get("vote") else "")),
+            "outcome": f["outcome"]}
+        session["mapping"][rid] = f["symbol"]
+        session["t_by_rid"][rid] = t_ms
+    SESSIONS.mkdir(parents=True, exist_ok=True)
+    (SESSIONS / f"{sid}.json").write_text(json.dumps(session, indent=2), encoding="utf-8")
+    gt = [p["ground_truth"] for p in session["packets"].values()]
+    print(f"mixed session {sid}: {n} BLIND packets "
+          f"({gt.count('would-pass')} live-pass, {gt.count('would-reject')} live-reject) "
+          f"from windows {windows}. Ground truth hidden in the session file; "
+          f"packets carry no setup/verdict. Decide blind:")
+    for rid in session["packets"]:
+        print(f"  python scripts/replay.py verdict {rid} y|n [code]   "
+              f"({RPACKETS / (rid + '.txt')})")
+    return 0
+
+
 def _load_sessions():
     out = {}
     if SESSIONS.exists():
@@ -313,11 +405,14 @@ def cmd_pending():
         if s.get("retired"):
             continue  # documented catches, not drills
         tag = "" if s.get("spec") == "classifier-v3" else "  [PRE-CLASSIFIER SPEC — old evidence format]"
+        blind = s.get("spec") == "classifier-v3-mixed"
         for rid, p in s["packets"].items():
             if rid not in done:
-                extra = f"  {p['setup']} rr={p['rr']}" if p.get("setup") else ""
+                # mixed sessions stay blind: no setup/rr leak in the listing
+                extra = "" if blind else (f"  {p['setup']} rr={p['rr']}" if p.get("setup") else "")
+                mixtag = "  [BLIND MIXED — no setup shown]" if blind else tag
                 print(f"{rid}  {p['alias']}  BUY  {p['confidence']:.0%}{extra}  "
-                      f"({RPACKETS / (rid + '.txt')}){tag}")
+                      f"({RPACKETS / (rid + '.txt')}){mixtag}")
                 n += 1
     if not n:
         print("no pending replay packets — create a session: python scripts/replay.py new --days-ago N")
@@ -350,10 +445,14 @@ def cmd_verdict(args):
             with open(DECISIONS, "a", encoding="utf-8") as f:
                 f.write(json.dumps(entry, separators=(",", ": ")) + "\n")
             o = p["outcome"]
+            t_ms = s.get("t_by_rid", {}).get(rid, s.get("t_ms"))
+            when = (datetime.fromtimestamp(t_ms/1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
+                    if t_ms else "unknown")
             print(f"logged: {rid} {entry['verdict']}" + (f" ({code})" if code else ""))
-            print(f"REVEAL: {p['alias']} was {s['mapping'][rid]}, "
-                  f"T = {datetime.fromtimestamp(s['t_ms']/1000, tz=timezone.utc):%Y-%m-%d %H:%M} UTC "
-                  f"({s['days_ago']}d ago)")
+            print(f"REVEAL: {p['alias']} was {s['mapping'][rid]}, T = {when} UTC")
+            if p.get("live_verdict"):
+                print(f"  live system would have: {p['live_verdict']} "
+                      f"(ground truth: {p.get('ground_truth')})")
             print(f"  outcome after T: +6h {o['chg_6h_pct']:+.2f}% | +24h {o['chg_24h_pct']:+.2f}% | "
                   f"best {o['max_gain_pct']:+.2f}% | worst {o['max_drawdown_pct']:+.2f}%")
             return 0
@@ -395,6 +494,8 @@ def main(argv):
     cmd = argv[1] if len(argv) > 1 else ""
     if cmd == "new":
         return cmd_new(argv[2:])
+    if cmd == "mixed":
+        return cmd_mixed(argv[2:])
     if cmd == "pending":
         return cmd_pending()
     if cmd == "verdict":

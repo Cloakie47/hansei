@@ -1,0 +1,4 @@
+{"ts": "2026-09-02T19:32:30Z","replay": true,"rid": "r-s30d7-02","sid": "s30d7","symbol": "ARBUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
+{"ts": "2026-09-02T19:44:16Z","replay": true,"rid": "r-s30d7-03","sid": "s30d7","symbol": "ENAUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
+{"ts": "2026-09-02T19:45:03Z","replay": true,"rid": "r-s45d11-01","sid": "s45d11","symbol": "LTCUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
+{"ts": "2026-09-02T19:45:28Z","replay": true,"rid": "r-s45d11-02","sid": "s45d11","symbol": "TRUMPUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
