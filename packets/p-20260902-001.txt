@@ -1,0 +1,43 @@
+━━━ DECISION PACKET p-20260902-001 ━━━
+
+PROPOSAL   SELL 0.104 SOL of SOLUSDT (spot, market — CLOSING an open position)
+CONFIDENCE 62%
+EXIT REASON DRILL: R013 time stop — position aged past 72h maximum hold
+SETUP      EXIT — DRILL: R013 time stop — position aged past 72h maximum hold
+THESIS     Exit of the open SOLUSDT position: DRILL: R013 time stop — position aged past 72h maximum hold
+
+EVIDENCE
+  • [B] klines 1h x168 -> price at 33% of 7d range (94.95 - 110.6)
+  • [B] last 24h kline volume 0.84x prior 6d daily avg
+  • [B] current 1h candle body 0.21x avg of prior 24
+  • [C] depth ±1% of mid -> bids 2955k / asks 4162k USDT, imbalance 0.71
+  • [C] spread 1.0 bps
+  • [POSITION] open since 2026-09-01T20:00:00Z, 0.104 SOL held
+  • Vetting: N/A (top-20)
+
+RULES CHECKED
+  R001 Never propose more than 20% of sub-account b ...... OK (exit packet — reduces exposure, sizing cap not applicable)
+  R003 Do not re-propose an idea rejected in the la ...... OK (no rejected proposal for this symbol+side in last 24h)
+  R004 Any restriction on a tool must also cover to ...... OK (tooling rule — enforced in place.py (assert_paper_safe + tool_execute log))
+  R005 Only propose assets that exist as an active ....... OK (enforced at ingest (scripts/ingest.py) — on-chain signals filtered before packets)
+  R006 A signal counts as evidence for a spot pair ....... OK (enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed)
+  R007 Evidence must draw on at least two structura ...... OK (2 independent sources: B,C (context only, not counted: POSITION))
+  R008 Every asset outside the top 20 must pass a v ...... OK (N/A — SOL is top-20, vetting not required)
+  R009 A draft with confidence below 60% is emitted ...... OK (confidence 62% >= 60% floor)
+  R010 No new packet may be generated for a symbol+ ...... OK (no pending packet for this symbol+side)
+  R011 Tokenized equity and RWA pairs (bstocks) are ...... OK (enforced at ingest (scan.py TRD_GRP_261 marker) — bstocks never reach drafts)
+  R012 Every packet must state a complete exit plan ...... OK (invalidation stated + 24h time stop)
+  R013 Maximum hold is 72 hours. When an open posit ...... OK (max hold 24h <= 72h)
+  R014 No packet may be generated with a reward-to- ...... OK (exempt — exit packet closes a position, it does not open one)
+
+INVALIDATION
+  Not applicable — closing order; the position's own invalidation/time stop triggered this exit.
+
+TIME STOP
+  24h maximum hold (R013) — exit proposed at the next scan after expiry, whichever of invalidation/time stop comes first.
+
+SIZE REASONING
+  Full position close: 0.104 base units held.
+
+━━━ Pilot: y / n ━━━
+If n, one code please: SIZE / TIMING / CONVICTION / RISK / DUPLICATE / ASSET / OTHER

@@ -203,6 +203,11 @@ def affordability_check(proposal, account):
     """R001 pre-flight, enforced before any tool call in both modes.
     Raises on violation. Balance 0 returns SKIPPED (not a failure) so paper
     fills against an unfunded account are visibly marked in the log."""
+    if proposal.get("exit"):
+        # Closing a position needs no USDT and reduces exposure; the sizing
+        # cap does not apply. Distinct status so checkers report it honestly.
+        return {"status": "EXIT", "balance_source": "n/a (exit)",
+                "note": "exit reduces exposure — R001 sizing cap not applicable"}
     src = resolve_balance(account)  # raises when no trustworthy figure exists
     balance = src["usdt_free"]
     if balance == 0:

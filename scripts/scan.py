@@ -76,6 +76,8 @@ def get(path, **params):
 # equities through.
 BSTOCK_MARKER = "TRD_GRP_261"
 
+SCAN_SIDE = "BUY"  # entry scans open longs; exits pass side="SELL" themselves
+
 
 def active_usdt_pairs():
     info = get("exchangeInfo", permissions="SPOT", showPermissionSets="true")
@@ -386,7 +388,10 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
     for row in rows[:top]:
         a_ev, a_trig = a_evidence(row)
         b = source_b(row["symbol"])
-        c = source_c(row["symbol"], side="BUY")  # spot: drafts open long only
+        # Entry scans hunt longs (spot, nothing held short); exit packets call
+        # source_c with side="SELL" directly — the side always comes from the
+        # caller's intent, never from inside source_c.
+        c = source_c(row["symbol"], side=SCAN_SIDE)
         setup, setup_detail = classify_setup(row, b)
         rr = risk_reward(row, b, setup) if setup not in ("CHASE", "UNCLASSIFIED") else None
         _place.append_jsonl(setups_log, {

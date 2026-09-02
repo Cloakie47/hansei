@@ -167,6 +167,8 @@ def next_proposal_id(now=None):
 
 def _check_r001(draft, ctx):
     aff = ctx["affordability"]
+    if aff.get("status") == "EXIT":
+        return "OK", "exit packet — reduces exposure, sizing cap not applicable"
     if aff["status"] == "SKIPPED":
         return "SKIPPED", "balance 0 — not enforceable, orderTest does not check balance"
     if aff["status"] == "OK":
@@ -300,6 +302,8 @@ def _check_r010(draft, ctx):
 
 
 def _check_r014(draft, ctx):
+    if draft.get("exit"):
+        return "OK", "exempt — exit packet closes a position, it does not open one"
     rr = draft.get("rr")
     if not rr or rr.get("rr") is None:
         return "BLOCKED", "no structural target/stop — blocked, not estimated"
@@ -339,16 +343,25 @@ def _rule_line(res):
 
 def render_packet(pid, draft, checks):
     order_kind = draft["type"].lower()
-    notional = place.proposal_notional_usdt(draft)
-    notional_txt = f"{notional:g}" if notional is not None else "?"
+    if draft.get("exit") and draft.get("quantity") is not None:
+        proposal_line = (f"PROPOSAL   SELL {draft['quantity']:g} "
+                         f"{re.sub(r'USDT$', '', draft['symbol'])} of {draft['symbol']} "
+                         f"(spot, {order_kind} — CLOSING an open position)")
+    else:
+        notional = place.proposal_notional_usdt(draft)
+        notional_txt = f"{notional:g}" if notional is not None else "?"
+        proposal_line = (f"PROPOSAL   {draft['side']} {notional_txt} USDT of "
+                         f"{draft['symbol']} (spot, {order_kind})")
     lines = [
         f"{BAR} DECISION PACKET {pid} {BAR}",
         "",
-        f"PROPOSAL   {draft['side']} {notional_txt} USDT of {draft['symbol']} (spot, {order_kind})",
+        proposal_line,
         f"CONFIDENCE {round(draft['confidence'] * 100)}%",
     ]
     if draft["confidence"] < LOW_CONVICTION:
         lines.append("LOW CONVICTION — below 60%, consider NO_PROPOSAL instead")
+    if draft.get("exit"):
+        lines.append(f"EXIT REASON {draft['exit_reason']}")
     if draft.get("setup"):
         lines.append(f"SETUP      {draft['setup']} — {draft.get('setup_detail', '')}")
     rr = draft.get("rr")
@@ -417,6 +430,23 @@ def build_packet(draft, market, account):
         log_suppressed("R010", draft, reason)
         return None, (f"NO PACKET (R010): {draft['symbol']} {draft['side']} {reason}. "
                       f"Logged to logs/suppressed.jsonl."), None
+    # Exit packets (SELL closing an open position): exempt from the setup
+    # classifier and R014 — you are closing a position, not opening one —
+    # but a stated reason is mandatory (Pilot-directed 2026-09-02).
+    if draft.get("exit"):
+        if not draft.get("exit_reason"):
+            return None, ("NO PACKET: exit draft without an exit_reason — every "
+                          "exit must state why it is closing."), None
+        rules = parse_active_rules()
+        ctx = {"recent": recent_proposals(10), "market": market,
+               "affordability": place.affordability_check(draft, account)}
+        checks = run_rule_checks(draft, rules, ctx)
+        blocked = [c for c in checks if c["status"] == "BLOCKED"]
+        if blocked:
+            return None, "\n".join(
+                f"PACKET BLOCKED by {c['id']}: {c['detail']}" for c in blocked), checks
+        pid = next_proposal_id()
+        return pid, render_packet(pid, draft, checks), checks
     # R014: structural reward-to-risk gate. No structure = blocked, not estimated.
     rr = draft.get("rr")
     if not rr or rr.get("rr") is None:

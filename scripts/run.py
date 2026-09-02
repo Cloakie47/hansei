@@ -240,7 +240,71 @@ def shadow_score(cand):
     return entry
 
 
-def mechanical_draft(cand, stake, use_v1=False):
+def exit_draft(symbol, base_qty, opened_ts, reason):
+    """A SELL packet that closes an open position. Same gate stack as any
+    proposal; exempt from the setup classifier and R014 (closing, not
+    opening); the reason is mandatory. Confidence is fixed at 0.62: an exit
+    is rule-execution, not a market forecast — documented, not tuned."""
+    import scan as scanmod
+    b = scanmod.source_b(symbol)
+    c = scanmod.source_c(symbol, side="SELL")
+    evidence = ([{"source": s, "text": t} for s, t in b["evidence"]]
+                + [{"source": s, "text": t} for s, t in c["evidence"]]
+                + [{"source": "POSITION", "text": f"open since {opened_ts}, "
+                    f"{base_qty:g} {symbol.replace('USDT', '')} held"}])
+    return {
+        "symbol": symbol, "side": "SELL", "type": "MARKET",
+        "quantity": base_qty,
+        "exit": True, "exit_reason": reason,
+        "confidence": 0.62,
+        "evidence": evidence,
+        "signals_used": ["spot_klines", "spot_depth", "fills.jsonl"],
+        "thesis": f"Exit of the open {symbol} position: {reason}",
+        "invalidation": "Not applicable — closing order; the position's own "
+                        "invalidation/time stop triggered this exit.",
+        "size_reasoning": f"Full position close: {base_qty:g} base units held.",
+        "max_hold_hours": 24,
+        "setup": "EXIT", "setup_detail": reason,
+    }
+
+
+def cmd_exit(args):
+    if not args:
+        print("usage: run.py exit <SYMBOL> [--qty N --opened TS] --reason \"...\"")
+        return 1
+    symbol = args[0].upper()
+    reason = args[args.index("--reason") + 1] if "--reason" in args else None
+    if not reason:
+        print("an exit must state a reason (--reason)")
+        return 1
+    qty = float(args[args.index("--qty") + 1]) if "--qty" in args else None
+    opened = args[args.index("--opened") + 1] if "--opened" in args else None
+    if qty is None:
+        # derive from LIVE fills (executedQty of the position's fill)
+        fills = [json.loads(l) for l in place.FILLS_LOG.read_text(encoding="utf-8").splitlines()
+                 if l.strip()] if place.FILLS_LOG.exists() else []
+        for f in reversed(fills):
+            if (f.get("mode") == "LIVE" and f.get("test") is not True
+                    and f["symbol"] == symbol and f["side"] == "BUY"):
+                qty = float(f.get("response", {}).get("executedQty") or 0)
+                opened = f["ts"]
+                break
+        if not qty:
+            print(f"no open LIVE position found for {symbol}; pass --qty/--opened for a drill")
+            return 1
+    draft = exit_draft(symbol, qty, opened or "unknown", reason)
+    ctx, err = load_balance_ctx()
+    pid, text, checks = propose.build_packet(draft, {}, ctx or {"spot_account": {"balances": []}})
+    print(text)
+    if pid is None:
+        return 2
+    propose.save_pending(pid, draft, checks)
+    propose.save_packet_text(pid, text)
+    print(f"packet: packets/{pid}.txt")
+    return 0
+
+
+def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
     trig = {s: t for s, t in cand["triggers"].items()
             if t and not (s == "C" and t == ["wide-spread"])}
     n = len(trig)
@@ -250,7 +314,7 @@ def mechanical_draft(cand, stake, use_v1=False):
         conf = confidence_v2(n, cand["metrics"])
     parts = "; ".join(f"{s}:{'+'.join(t)}" for s, t in sorted(trig.items()))
     return {
-        "symbol": cand["symbol"], "side": "BUY", "type": "MARKET",
+        "symbol": cand["symbol"], "side": side, "type": "MARKET",
         "quoteOrderQty": stake, "confidence": conf,
         "evidence": cand["evidence"],
         "signals_used": ["spot_ticker24hr(all-pairs)", "spot_klines", "spot_depth"],
@@ -590,6 +654,8 @@ def main(argv):
         return chart.main()
     if cmd == "positions":
         return cmd_positions()
+    if cmd == "exit":
+        return cmd_exit(argv[2:])
     print(__doc__)
     return 1
 
