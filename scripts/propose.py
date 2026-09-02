@@ -330,12 +330,23 @@ def _check_r016(draft, ctx):
     return "OK", "enforced at ingest (scan.py) — pairs over 12% raw avg daily move never reach drafts"
 
 
+def _check_r017(draft, ctx):
+    if draft.get("exit"):
+        return "OK", "exempt — exits are never obstructed"
+    reg = draft.get("market_regime") or {}
+    chg = reg.get("btc_chg24_pct")
+    if draft.get("r017_penalty"):
+        return "OK", f"soft brake APPLIED: -0.04 (BTC {chg:+.2f}% on the day)"
+    return "OK", (f"not triggered (BTC {chg:+.2f}% > -3%)" if chg is not None
+                  else "no regime data on draft — penalty path unused")
+
+
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
             "R004": _check_r004, "R005": _check_r005, "R006": _check_r006,
             "R007": _check_r007, "R008": _check_r008, "R009": _check_r009,
             "R010": _check_r010, "R011": _check_r011, "R012": _check_r012,
             "R013": _check_r013, "R014": _check_r014, "R015": _check_r015,
-            "R016": _check_r016}
+            "R016": _check_r016, "R017": _check_r017}
 
 
 def run_rule_checks(draft, rules, ctx):
@@ -376,6 +387,9 @@ def render_packet(pid, draft, checks):
         proposal_line,
         f"CONFIDENCE {round(draft['confidence'] * 100)}%",
     ]
+    if draft.get("r017_penalty"):
+        lines.append("R017 SOFT BRAKE: confidence includes a -0.04 penalty "
+                     "(BTC down 3%+ on the day)")
     if draft["confidence"] < LOW_CONVICTION:
         lines.append("LOW CONVICTION — below 60%, consider NO_PROPOSAL instead")
     if draft.get("exit"):

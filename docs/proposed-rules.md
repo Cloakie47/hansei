@@ -2,7 +2,17 @@
 
 NOT in rulebook.md. Rules take effect only when the Pilot approves them.
 
-## Proposed (2026-09-03): regime gate for BUY entries
+## R017: PARTIALLY SHIPPED 2026-09-03 — soft brake live, hard block deferred
+
+Pilot decision: the -0.04 confidence penalty on BUY entries when BTC is
+down 3%+ on the day is SHIPPED (in rulebook.md as R017; exits exempt;
+renders on packets and in the R017 rule-check line). The hard block on
+confirmed-downtrend entries is APPROVED IN PRINCIPLE, DEFERRED ON
+THROUGHPUT — same reasoning as R018: four days left, zero approvals,
+zero fills; a new blocking gate is the wrong risk. Revisit after the
+deadline. The loud regime warning stays as-is. Original draft below.
+
+## Original draft (2026-09-03): regime gate for BUY entries
 
 - **R017 (PROPOSED)** No new BUY entry packet may be generated while BTC is
   in a CONFIRMED DOWNTREND — daily close below the 20-day SMA with the SMA

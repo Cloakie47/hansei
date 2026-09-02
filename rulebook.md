@@ -48,6 +48,11 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   Target and stop are derived from market structure — recent swing highs and
   lows — never from fixed percentages. A candidate that cannot produce a
   structural target and stop is blocked, not estimated.
+- **R017** When BTC is down 3% or more on the day, every BUY entry draft
+  takes a flat -0.04 confidence penalty before the R009 floor. Exit packets
+  are exempt — closing into weakness is never obstructed. (The hard block
+  on entries during a confirmed BTC downtrend is approved in principle,
+  DEFERRED on throughput — recorded in docs/proposed-rules.md.)
 - **R016** Pairs whose RAW average daily move exceeds 12% are excluded from
   the scan universe. A 12%-daily asset routinely travels ±20% inside the
   R013 72h hold — structural stops are meaningless at that amplitude and

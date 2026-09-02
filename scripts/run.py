@@ -379,6 +379,14 @@ def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
         conf = MECH_CONFIDENCE.get(min(n, 3), 0.50)
     else:
         conf = confidence_v2(n, cand["metrics"])
+    # R017 soft brake (Pilot-approved 2026-09-03): BTC down 3%+ on the day
+    # costs every BUY entry draft a flat 0.04 before the R009 floor. Exits
+    # never come through this path, so they are exempt by construction.
+    r017 = False
+    reg = cand.get("regime") or {}
+    if side == "BUY" and (reg.get("btc_chg24_pct") or 0) <= -3:
+        conf = round(conf - 0.04, 3)
+        r017 = True
     parts = "; ".join(f"{s}:{'+'.join(t)}" for s, t in sorted(trig.items()))
     return {
         "symbol": cand["symbol"], "side": side, "type": "MARKET",
@@ -394,6 +402,7 @@ def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
         "size_reasoning": (f"{stake} USDT = 20% of live balance (R001 ceiling, "
                            f"6 USDT floor) via place.default_stake."),
         "max_hold_hours": 72,
+        "r017_penalty": r017,
         "setup": cand.get("setup"),
         "setup_detail": cand.get("setup_detail"),
         "rr": cand.get("rr"),
