@@ -143,7 +143,7 @@ def main():
     ax = axes[1][0]
     ax.set_title("Suppressions per day (R009 floor vs R010 dupe)", color=INK,
                  fontsize=11, loc="left")
-    per_day = defaultdict(lambda: {"R009": 0, "R010": 0})
+    per_day = defaultdict(lambda: defaultdict(int))
     for s in suppressed:
         per_day[day_of(s)][s["rule"]] += 1
     days = sorted(per_day)
@@ -155,9 +155,9 @@ def main():
         x = np.arange(len(days))
         w = 0.34
         r9 = [per_day[d]["R009"] for d in days]
-        r10 = [per_day[d]["R010"] for d in days]
+        r10 = [per_day[d]["R010"] + per_day[d]["R014"] for d in days]
         b1 = ax.bar(x - w / 2 - 0.01, r9, w, color=ORANGE, label="R009 (< 60%)")
-        b2 = ax.bar(x + w / 2 + 0.01, r10, w, color=AQUA, label="R010 (pending dupe)")
+        b2 = ax.bar(x + w / 2 + 0.01, r10, w, color=AQUA, label="R010/R014 (dupe / R:R)")
         for bars in (b1, b2):
             for rect in bars:
                 if rect.get_height():
