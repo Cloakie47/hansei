@@ -8,6 +8,11 @@ An AI trading analyst that runs on Binance Agent OS. It does not trade on its ow
 It **proposes** trades to a human, learns from every rejection, and publishes an
 honest report card every night.
 
+Holding horizon, fixed 2026-09-03: a short-swing system — entries on daily
+structure, positions held hours to three days, 72-hour hard stop, every
+entry and exit individually approved by a human. Never describe it as
+intraday, real-time, or automatic.
+
 Built for the Binance Agent OS Mini Hackathon. **Deadline: 8 Sept 2026, 23:59 UTC.**
 Track B (connect your MCPs and trade).
 

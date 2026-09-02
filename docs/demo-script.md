@@ -10,8 +10,10 @@ SHOW: README.md, section "The claim, proven with timestamps" — scroll
 slowly through the five bullets. Then a split: git log entry fe0dcf0
 (20:14Z) beside logs/proposals.jsonl's CONVICTION rejections.
 
-SAY: "HANSEI proposes trades; a human decides. Here is the loop working,
-with timestamps. At 19:57 UTC my agent generated two packets. At 20:05 I
+SAY: "HANSEI is a short-swing system — entries on daily structure,
+positions held hours to three days, a 72-hour hard stop, and every entry
+and exit individually approved by a human. It proposes; I decide. Here is
+that loop working, with timestamps. At 19:57 UTC my agent generated two packets. At 20:05 I
 rejected them as momentum chases. At 20:14 — nine minutes later — a setup
 classifier built from that critique was committed, and at 20:25 it
 independently flagged both packets as CHASE. Human judgment first, code

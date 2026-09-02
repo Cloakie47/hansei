@@ -1,4 +1,24 @@
-# PROPOSED R018: quality tiers — DRAFT ONLY, not shipped
+# R018: quality tiers — APPROVED IN PRINCIPLE, DEFERRED ON THROUGHPUT
+
+Pilot decision (2026-09-03): the hybrid recommendation below is the RIGHT
+DESIGN and would ship in a normal development cycle. It is deferred, not
+rejected, because the measured cost — zero packets over the last three
+days replayed, 0-2 per week forward — is unacceptable with four days to
+the deadline, zero approvals and zero fills on the record. Revisit after
+the hackathon window.
+
+Two findings the Pilot flagged as the reason this draft stays in the repo
+regardless of shipping:
+1. MEDIAN volume over average — a single hype day cannot buy a tier.
+2. The refusal to disguise a blocklist as criteria: TUT and PUMP
+   (memecoins) legitimately qualified for Tier 2 on the numbers, and the
+   draft says so instead of bending the thresholds until they didn't.
+   Criteria that measure establishment measure establishment — not
+   meme-ness — and pretending otherwise would have been a hidden list.
+
+Original draft follows, unchanged.
+
+---
 
 Motivation (Pilot, 2026-09-03): the expectation is established, high-volume
 assets — BTC, ETH, BNB, SOL, XRP — but the only quality filter is a 15m

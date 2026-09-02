@@ -4,8 +4,11 @@
 
 HANSEI is an AI trading analyst on Binance Agent OS that **proposes** trades,
 learns from every rejection, and publishes an honest report card every night.
-It cannot execute anything on its own — the human (the Pilot) approves or
-rejects every proposal, and Binance requires its own confirmation on top.
+It is a short-swing system — entries on daily structure, positions held hours
+to three days, 72-hour hard stop, every entry and exit individually approved
+by a human. It cannot execute anything on its own — the human (the Pilot)
+approves or rejects every proposal, and Binance requires its own confirmation
+on top.
 
 ![Sync Rate dashboard](dashboard/sync-rate.png)
 
