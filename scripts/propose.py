@@ -13,7 +13,7 @@ Session flow:
        -> reads the last 10 non-test entries of logs/proposals.jsonl
        -> runs the affordability pre-flight from place.py
        -> checks the draft against EVERY active rule; any BLOCKED rule means
-          no packet is printed — the blocked rule prints instead, exit 2
+          no packet is printed, the blocked rule prints instead, exit 2
        -> otherwise renders the packet exactly per the spec, and saves the
           pending proposal to logs/pending/<id>.json for the verdict step
   2. python scripts/propose.py verdict <id> <APPROVED|REJECTED> [code] [note]
@@ -24,7 +24,7 @@ Session flow:
        -> the real "No proposal today." code path: prints it and logs a
           proposal with verdict NO_PROPOSAL so Debrief metrics count it.
 
-In-process entry point: generate_packet(invoke, draft) — invoke is the
+In-process entry point: generate_packet(invoke, draft), invoke is the
 session-side MCP caller, used for spot_ticker24hr and spot_getAccount.
 
 Draft JSON fields: symbol, side, type (MARKET/LIMIT), quoteOrderQty or
@@ -51,7 +51,7 @@ SUPPRESSED_LOG = ROOT / "logs" / "suppressed.jsonl"
 
 # R009 hard floor: below this a draft is suppressed to NO_PROPOSAL and logged.
 # The suppression log exists so confidence clustering just above the floor is
-# visible — a hard floor invites 61% nudging, and the log is how we catch it.
+# visible, a hard floor invites 61% nudging, and the log is how we catch it.
 CONFIDENCE_FLOOR = 0.60
 LOW_CONVICTION = CONFIDENCE_FLOOR  # packet flag threshold (for >=60% packets)
 
@@ -139,7 +139,7 @@ def recent_proposals(n=10):
 
 def next_proposal_id(now=None):
     """Next sequential p-YYYYMMDD-NNN. Counts every logged and pending id for
-    the day, test entries included — ids must never collide."""
+    the day, test entries included, ids must never collide."""
     now = now or datetime.now(timezone.utc)
     day = now.strftime("%Y%m%d")
     seqs = [0]
@@ -150,7 +150,7 @@ def next_proposal_id(now=None):
     if PENDING_DIR.exists():
         ids += [p.stem for p in PENDING_DIR.glob("p-*.json")]
     for pid in ids:
-        # \d{3,}: sequences can exceed 999 (they did — test ids 998/999 pushed
+        # \d{3,}: sequences can exceed 999 (they did, test ids 998/999 pushed
         # the counter past three digits and a \d{3} pattern went blind, which
         # collided two packets on one id)
         m = re.match(rf"^p-{day}-(\d{{3,}})$", pid or "")
@@ -168,9 +168,9 @@ def next_proposal_id(now=None):
 def _check_r001(draft, ctx):
     aff = ctx["affordability"]
     if aff.get("status") == "EXIT":
-        return "OK", "exit packet — reduces exposure, sizing cap not applicable"
+        return "OK", "exit packet, reduces exposure, sizing cap not applicable"
     if aff["status"] == "SKIPPED":
-        return "SKIPPED", "balance 0 — not enforceable, orderTest does not check balance"
+        return "SKIPPED", "balance 0, not enforceable, orderTest does not check balance"
     if aff["status"] == "OK":
         pct = aff["fraction_of_balance"] * 100
         return "OK", (f"{aff['notional_usdt']:.2f} of {aff['usdt_free']:.2f} USDT = {pct:.1f}% "
@@ -181,7 +181,7 @@ def _check_r001(draft, ctx):
 def _check_r002(draft, ctx):
     base = re.sub(r"(USDT|USDC|FDUSD|TUSD|BTC|ETH|BNB)$", "", draft["symbol"])
     if base in TOP_20_BASES:
-        return "OK", f"N/A — {base} is top-20, audit not required"
+        return "OK", f"N/A, {base} is top-20, audit not required"
     audit = draft.get("audit")
     if audit == "PASS":
         return "OK", f"{base} not top-20, query-token-audit PASS"
@@ -211,11 +211,11 @@ def _check_r003(draft, ctx):
 
 
 def _check_r004(draft, ctx):
-    return "OK", "tooling rule — enforced in place.py (assert_paper_safe + tool_execute log)"
+    return "OK", "tooling rule, enforced in place.py (assert_paper_safe + tool_execute log)"
 
 
 # R007: structurally independent evidence sources. A=cross-sectional,
-# B=time series, C=order book, D=report. ONCHAIN is optional context only —
+# B=time series, C=order book, D=report. ONCHAIN is optional context only,
 # it never counts toward the two, and may never be the sole basis.
 R007_SOURCES = {"A", "B", "C", "D"}
 
@@ -231,22 +231,22 @@ def evidence_sources(draft):
 
 
 def _check_r005(draft, ctx):
-    return "OK", "enforced at ingest (scripts/ingest.py) — on-chain signals filtered before packets"
+    return "OK", "enforced at ingest (scripts/ingest.py), on-chain signals filtered before packets"
 
 
 def _check_r006(draft, ctx):
-    return "OK", "enforced at ingest (scripts/ingest.py) — canonical contract match, fail-closed"
+    return "OK", "enforced at ingest (scripts/ingest.py), canonical contract match, fail-closed"
 
 
 def _check_r011(draft, ctx):
-    return "OK", "enforced at ingest (scan.py TRD_GRP_261 marker) — bstocks never reach drafts"
+    return "OK", "enforced at ingest (scan.py TRD_GRP_261 marker), bstocks never reach drafts"
 
 
 def _check_r012(draft, ctx):
     if not draft.get("invalidation"):
-        return "BLOCKED", "no invalidation condition — exit plan incomplete"
+        return "BLOCKED", "no invalidation condition, exit plan incomplete"
     if not draft.get("max_hold_hours"):
-        return "BLOCKED", "no time stop — exit plan incomplete"
+        return "BLOCKED", "no time stop, exit plan incomplete"
     return "OK", f"invalidation stated + {draft['max_hold_hours']}h time stop"
 
 
@@ -262,7 +262,7 @@ def _check_r013(draft, ctx):
 def _check_r008(draft, ctx):
     base = re.sub(r"(USDT|USDC|FDUSD|TUSD|BTC|ETH|BNB)$", "", draft["symbol"])
     if base in TOP_20_BASES:
-        return "OK", f"N/A — {base} is top-20, vetting not required"
+        return "OK", f"N/A, {base} is top-20, vetting not required"
     vet = draft.get("vetting")
     if not isinstance(vet, dict) or "verdict" not in vet:
         return "BLOCKED", f"{base} not top-20 and no vetting result in draft (R008 fail-closed)"
@@ -282,7 +282,7 @@ def _check_r007(draft, ctx):
             detail += f" (context only, not counted: {','.join(ignored)})"
         return "OK", detail
     return "BLOCKED", (f"only {len(counted)} independent source(s) {counted}; "
-                       f"non-counting tags: {ignored} — need 2 of A/B/C/D")
+                       f"non-counting tags: {ignored}, need 2 of A/B/C/D")
 
 
 def _check_r009(draft, ctx):
@@ -290,7 +290,7 @@ def _check_r009(draft, ctx):
     if conf is None:
         return "BLOCKED", "no confidence value on draft"
     if conf < CONFIDENCE_FLOOR:
-        return "BLOCKED", f"confidence {conf:.0%} < 60% — must be suppressed to NO_PROPOSAL"
+        return "BLOCKED", f"confidence {conf:.0%} < 60%, must be suppressed to NO_PROPOSAL"
     return "OK", f"confidence {conf:.0%} >= 60% floor"
 
 
@@ -303,10 +303,10 @@ def _check_r010(draft, ctx):
 
 def _check_r014(draft, ctx):
     if draft.get("exit"):
-        return "OK", "exempt — exit packet closes a position, it does not open one"
+        return "OK", "exempt, exit packet closes a position, it does not open one"
     rr = draft.get("rr")
     if not rr or rr.get("rr") is None:
-        return "BLOCKED", "no structural target/stop — blocked, not estimated"
+        return "BLOCKED", "no structural target/stop, blocked, not estimated"
     if rr["rr"] < 2.0:
         return "BLOCKED", f"R:R {rr['rr']:.2f}:1 < 2:1"
     return "OK", (f"R:R {rr['rr']:.2f}:1 (target {rr['target']:g}, stop {rr['stop']:g}, "
@@ -315,7 +315,7 @@ def _check_r014(draft, ctx):
 
 def _check_r015(draft, ctx):
     if draft.get("exit"):
-        return "OK", "exempt — the vote qualifies an entry setup; an exit has none"
+        return "OK", "exempt, the vote qualifies an entry setup; an exit has none"
     vote = draft.get("vote")
     if not isinstance(vote, dict):
         return "BLOCKED", "no indicator vote on draft (R015 fail-closed)"
@@ -327,18 +327,18 @@ def _check_r015(draft, ctx):
 
 
 def _check_r016(draft, ctx):
-    return "OK", "enforced at ingest (scan.py) — pairs over 12% raw avg daily move never reach drafts"
+    return "OK", "enforced at ingest (scan.py), pairs over 12% raw avg daily move never reach drafts"
 
 
 def _check_r017(draft, ctx):
     if draft.get("exit"):
-        return "OK", "exempt — exits are never obstructed"
+        return "OK", "exempt, exits are never obstructed"
     reg = draft.get("market_regime") or {}
     chg = reg.get("btc_chg24_pct")
     if draft.get("r017_penalty"):
         return "OK", f"soft brake APPLIED: -0.04 (BTC {chg:+.2f}% on the day)"
     return "OK", (f"not triggered (BTC {chg:+.2f}% > -3%)" if chg is not None
-                  else "no regime data on draft — penalty path unused")
+                  else "no regime data on draft, penalty path unused")
 
 
 CHECKERS = {"R001": _check_r001, "R002": _check_r002, "R003": _check_r003,
@@ -356,7 +356,7 @@ def run_rule_checks(draft, rules, ctx):
         if checker:
             status, detail = checker(draft, ctx)
         else:
-            status, detail = "MANUAL", "no mechanical check implemented — verify by hand"
+            status, detail = "MANUAL", "no mechanical check implemented, verify by hand"
         results.append({"id": rule["id"], "text": rule["text"], "status": status, "detail": detail})
     return results
 
@@ -375,7 +375,7 @@ def render_packet(pid, draft, checks):
     if draft.get("exit") and draft.get("quantity") is not None:
         proposal_line = (f"PROPOSAL   SELL {draft['quantity']:g} "
                          f"{re.sub(r'USDT$', '', draft['symbol'])} of {draft['symbol']} "
-                         f"(spot, {order_kind} — CLOSING an open position)")
+                         f"(spot, {order_kind}, CLOSING an open position)")
     else:
         notional = place.proposal_notional_usdt(draft)
         notional_txt = f"{notional:g}" if notional is not None else "?"
@@ -391,11 +391,11 @@ def render_packet(pid, draft, checks):
         lines.append("R017 SOFT BRAKE: confidence includes a -0.04 penalty "
                      "(BTC down 3%+ on the day)")
     if draft["confidence"] < LOW_CONVICTION:
-        lines.append("LOW CONVICTION — below 60%, consider NO_PROPOSAL instead")
+        lines.append("LOW CONVICTION, below 60%, consider NO_PROPOSAL instead")
     if draft.get("exit"):
         lines.append(f"EXIT REASON {draft['exit_reason']}")
     if draft.get("setup"):
-        lines.append(f"SETUP      {draft['setup']} — {draft.get('setup_detail', '')}")
+        lines.append(f"SETUP      {draft['setup']}, {draft.get('setup_detail', '')}")
     rr = draft.get("rr")
     if rr:
         lines.append(f"R:R        {rr['rr']:.1f} : 1 (target {rr['target']:g}, "
@@ -413,10 +413,10 @@ def render_packet(pid, draft, checks):
             lines.append("!! REGIME WARNING: BUY proposed while BTC is "
                          + ("in a confirmed DOWNTREND" if reg.get("regime") == "DOWNTREND"
                             else f"down {reg['btc_chg24_pct']:+.2f}% on the day")
-                         + " — alt longs carry beta to this. Not gated; your call.")
+                         + ", alt longs carry beta to this. Not gated; your call.")
     vote = draft.get("vote")
     if isinstance(vote, dict):
-        lines.append(f"INDICATOR VOTE ({vote['n_pass']} of 4, need {vote['need']}) — R015")
+        lines.append(f"INDICATOR VOTE ({vote['n_pass']} of 4, need {vote['need']}), R015")
         for item in vote.get("passed", []):
             lines.append(f"  [PASS] {item}")
         for item in vote.get("failed", []):
@@ -447,7 +447,7 @@ def render_packet(pid, draft, checks):
         f"  {draft['invalidation']}",
         "",
         "TIME STOP",
-        f"  {draft.get('max_hold_hours', 72)}h maximum hold (R013) — exit proposed at the "
+        f"  {draft.get('max_hold_hours', 72)}h maximum hold (R013), exit proposed at the "
         "next scan after expiry, whichever of invalidation/time stop comes first.",
         "",
         "SIZE REASONING",
@@ -464,10 +464,10 @@ def render_packet(pid, draft, checks):
 
 def build_packet(draft, market, account):
     """Returns (pid, packet_text, checks) or raises/blocks. BLOCKED rules
-    print instead of a packet — caller decides exit."""
+    print instead of a packet, caller decides exit."""
     # R009 hard floor: suppress to NO_PROPOSAL, log for clustering visibility.
     if draft.get("confidence") is not None and draft["confidence"] < CONFIDENCE_FLOOR:
-        reason = f"confidence {draft['confidence']:.1%} < 60.0% floor — suppressed to NO_PROPOSAL"
+        reason = f"confidence {draft['confidence']:.1%} < 60.0% floor, suppressed to NO_PROPOSAL"
         log_suppressed("R009", draft, reason)
         return None, (f"NO PACKET (R009): {draft['symbol']} {draft['side']} {reason}. "
                       f"Logged to logs/suppressed.jsonl. Emit the day-level NO_PROPOSAL "
@@ -475,16 +475,16 @@ def build_packet(draft, market, account):
     # R010: never stack a second packet on a symbol+side the Pilot hasn't decided.
     clash = pending_clash(draft["symbol"], draft["side"])
     if clash:
-        reason = f"duplicate-pending skip — {clash} already awaits a verdict"
+        reason = f"duplicate-pending skip, {clash} already awaits a verdict"
         log_suppressed("R010", draft, reason)
         return None, (f"NO PACKET (R010): {draft['symbol']} {draft['side']} {reason}. "
                       f"Logged to logs/suppressed.jsonl."), None
     # Exit packets (SELL closing an open position): exempt from the setup
-    # classifier and R014 — you are closing a position, not opening one —
+    # classifier and R014, you are closing a position, not opening one,
     # but a stated reason is mandatory (Pilot-directed 2026-09-02).
     if draft.get("exit"):
         if not draft.get("exit_reason"):
-            return None, ("NO PACKET: exit draft without an exit_reason — every "
+            return None, ("NO PACKET: exit draft without an exit_reason, every "
                           "exit must state why it is closing."), None
         rules = parse_active_rules()
         ctx = {"recent": recent_proposals(10), "market": market,
@@ -500,7 +500,7 @@ def build_packet(draft, market, account):
     rr = draft.get("rr")
     if not rr or rr.get("rr") is None:
         reason = (draft.get("rr_refusal")
-                  or "R014: no structural target/stop could be derived — blocked, not estimated")
+                  or "R014: no structural target/stop could be derived, blocked, not estimated")
         log_suppressed("R014", draft, reason)
         return None, (f"NO PACKET (R014): {draft['symbol']} {draft['side']} {reason}. "
                       f"Logged to logs/suppressed.jsonl."), None
@@ -526,7 +526,7 @@ def build_packet(draft, market, account):
 
 
 def save_packet_text(pid, text):
-    """The rendered packet is the artifact of record — terminal output gets
+    """The rendered packet is the artifact of record, terminal output gets
     mangled in transit. Written at generation time, UTF-8."""
     PACKETS_DIR.mkdir(parents=True, exist_ok=True)
     path = PACKETS_DIR / f"{pid}.txt"
@@ -577,7 +577,7 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False,
 
     pending_path = PENDING_DIR / f"{pid}.json"
     if not pending_path.exists():
-        raise FileNotFoundError(f"no pending proposal {pid} — generate the packet first")
+        raise FileNotFoundError(f"no pending proposal {pid}, generate the packet first")
     pending = json.loads(pending_path.read_text(encoding="utf-8"))
     draft = pending["draft"]
 
@@ -609,7 +609,7 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False,
         # administrative rejection of an outdated packet spec: counts in Sync
         # Rate (it was decided), but is EXCLUDED from bias analysis and from
         # any Step-4 inference about Pilot preference (Pilot-directed
-        # 2026-09-02) — admin rejections must never be learned as
+        # 2026-09-02), admin rejections must never be learned as
         # "the Pilot rejects BUY proposals".
         entry["spec_superseded"] = True
     place.append_jsonl(PROPOSALS_LOG, entry)
@@ -624,7 +624,7 @@ def record_verdict(pid, verdict, reason_code=None, note=None, test=False,
 
 
 def log_no_proposal(reason, test=False):
-    """The real 'No proposal today.' path — logged so Debrief metrics see it."""
+    """The real 'No proposal today.' path, logged so Debrief metrics see it."""
     entry = {
         "id": next_proposal_id(),
         "ts": place.now_iso(),

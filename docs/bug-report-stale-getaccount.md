@@ -12,7 +12,7 @@ session (uid 1273127438).
 2026-09-01T18:16:01Z (confirmed by `wallet_depositHistory`, status 1).
 Roughly twelve hours later, `spot_getAccount` still returned USDT
 `0.00000000` with `updateTime` frozen at 1788279320551 =
-2026-09-01T16:15:20.551Z — a timestamp BEFORE the deposit — across 4 calls,
+2026-09-01T16:15:20.551Z, a timestamp BEFORE the deposit, across 4 calls,
 while `wallet_queryUserWalletBalance` reported the funds correctly.
 
 ## Exact calls and responses
@@ -23,15 +23,15 @@ Response (abridged to the relevant fields):
 
 Call 2: `spot_getAccount` `{}` (no params)
 Response: full balance list of every listable asset, all zero, including:
-`{"asset":"USDT","free":"0.00000000","locked":"0.00000000"}` — same
+`{"asset":"USDT","free":"0.00000000","locked":"0.00000000"}`, same
 `updateTime` 1788279320551.
 
 Call 3: `spot_getAccount` `{"omitZeroBalances": true}` (retry, minutes later)
-Response: identical to call 1 — `"balances":[]`, `updateTime` 1788279320551.
+Response: identical to call 1, `"balances":[]`, `updateTime` 1788279320551.
 
 Call 4: `spot_getAccount` `{"omitZeroBalances": true, "recvWindow": 10000}`
 (cache-bust attempt)
-Response: identical — `"balances":[]`, `updateTime` 1788279320551.
+Response: identical, `"balances":[]`, `updateTime` 1788279320551.
 
 ## Cross-checks in the same session
 
@@ -60,7 +60,7 @@ Response: identical — `"balances":[]`, `updateTime` 1788279320551.
 The snapshot eventually unstuck: `spot_getAccount` began returning
 `updateTime` 1788324841401 with USDT `40.00000000`. That updateTime equals
 the deposit's `completeTime` (1788324841000, to the second) which
-`wallet_depositHistory` began reporting at the same moment — the deposit
+`wallet_depositHistory` began reporting at the same moment, the deposit
 showed `status: 1` and `confirmTimes: "1/1"` roughly TWELVE HOURS earlier
 (insertTime 1788286561000) while `wallet_queryUserWalletBalance` already
 counted the funds. Observed conclusion: the account snapshot refreshes on
@@ -72,7 +72,7 @@ that entire window.
 
 An agent that trusts `spot_getAccount` alone sizes trades against phantom
 capital. In this instance the stale figure was LOWER than reality (0 vs 40
-USDT), which fails safe — the agent refuses to trade. But the same staleness
+USDT), which fails safe, the agent refuses to trade. But the same staleness
 after a balance-reducing event (a fill or transfer out) would report MORE
 free USDT than exists, and an agent would oversize or place orders that
 cannot settle. Our workaround: prefer `spot_getAccount` only when its

@@ -1,4 +1,4 @@
-"""HANSEI loop entry point — five commands so a tired human at 1am can run
+"""HANSEI loop entry point, five commands so a tired human at 1am can run
 the loop without thinking:
 
   run.py scan     freshness check, scan, generate packets, print file paths
@@ -8,7 +8,7 @@ the loop without thinking:
   run.py status   sync rate with denominator, decided count, open packets
 
 MCP split: where a step needs an authenticated call, this prints the EXACT
-tool call to make and accepts the response back as a file — the same
+tool call to make and accepts the response back as a file, the same
 prepare/record split place.py uses. Everything else is local.
 
 Balance context: run.py scan needs logs/balance-ctx.json. If it is missing
@@ -17,7 +17,7 @@ balance` command that assembles their responses into the context file.
 
 Mechanical confidence (v1, documented so calibration can judge it): a draft's
 confidence is set purely by how many structurally independent sources
-triggered — 1 source: 0.50, 2: 0.57, 3: 0.62. No hand-tuning per candidate.
+triggered, 1 source: 0.50, 2: 0.57, 3: 0.62. No hand-tuning per candidate.
 R009 then suppresses anything under 0.60, so only multi-source confluence
 reaches the Pilot. If the calibration buckets later show 62% is wrong, the
 mapping changes in ONE place here and the change is visible in git.
@@ -48,7 +48,7 @@ SCAN_HISTORY = ROOT / "logs" / "scan-history.jsonl"
 
 MECH_CONFIDENCE = {1: 0.50, 2: 0.57, 3: 0.62}  # v1 mapping (kept behind --v1)
 
-# Mechanical confidence v2 — Pilot-approved 2026-09-02 (option b). R009's 60%
+# Mechanical confidence v2, Pilot-approved 2026-09-02 (option b). R009's 60%
 # floor is untouched; v2 changes only how a draft's confidence is computed:
 #   base 0.62
 #   + volume term: min(0.06, 0.02 * log2(volume multiple))   [log-scaled]
@@ -62,7 +62,7 @@ MECH_CONFIDENCE = {1: 0.50, 2: 0.57, 3: 0.62}  # v1 mapping (kept behind --v1)
 # sources never exceed 80%.
 # TIER-DEPENDENT BASE (Pilot-approved 2026-09-02): 0.58 for two-source,
 # 0.62 for three-source. Rationale, recorded: eight of ten two-source
-# candidates clustered at 0.610-0.638 under a flat 0.62 base — the floor
+# candidates clustered at 0.610-0.638 under a flat 0.62 base, the floor
 # had stopped discriminating at that tier. A two-source draft must EARN its
 # way over 60% on volume, aligned book, and tight spread, not arrive there
 # by default.
@@ -88,7 +88,7 @@ def confidence_v2(n_sources, metrics):
     return round(max(0.40, min(conf, cap)), 3)
 
 BALANCE_INSTRUCTIONS = """\
-BALANCE CONTEXT NEEDED — make these three MCP calls and save each response:
+BALANCE CONTEXT NEEDED, make these three MCP calls and save each response:
 
   1. spot_getAccount            arguments: {"omitZeroBalances": true}   -> spot.json
   2. wallet_queryUserWalletBalance  arguments: {"quoteAsset": "USDT"}   -> wallet.json
@@ -134,7 +134,7 @@ def load_balance_ctx():
 
 
 # R008 auto-vetting for CEX-scan candidates outside the top 20. Rule
-# semantics unchanged: native L1 coins (curated set — no contract exists)
+# semantics unchanged: native L1 coins (curated set, no contract exists)
 # take the listing-data path; contract assets take query-token-audit via a
 # curated canonical mainnet address (only addresses we are certain of).
 # Anything not covered stays fail-closed BLOCKED, exactly as R008 says.
@@ -160,7 +160,7 @@ def auto_vet(symbol):
     return None  # unknown -> draft carries no vetting -> R008 blocks, fail-closed
 
 
-# Setup-aware confidence v3 — Pilot-approved as drafted 2026-09-02
+# Setup-aware confidence v3, Pilot-approved as drafted 2026-09-02
 # (docs/proposed-setup-aware-confidence.md). SHADOW MODE: v2 remains the
 # live scorer until the anti-clustering check passes on a genuinely quiet
 # day; every classified candidate gets both scores logged to
@@ -223,7 +223,7 @@ def confidence_v3(setup, n_sources, metrics, structure, rr_value):
             conf += 0.02
     if rr_value:
         # SYMMETRIC R:R term (Pilot-approved 2026-09-03): the same log scale
-        # both ways, capped both ways. R014 already blocks below 2:1 — this
+        # both ways, capped both ways. R014 already blocks below 2:1, this
         # changes nothing about what is tradeable; it stops broken structure
         # from carrying healthy confidence (a 0.68:1 was scoring 0.65+).
         conf += max(-0.045, min(0.045, 0.015 * math.log2(rr_value / 2)))
@@ -257,7 +257,7 @@ def exit_draft(symbol, base_qty, opened_ts, reason):
     """A SELL packet that closes an open position. Same gate stack as any
     proposal; exempt from the setup classifier and R014 (closing, not
     opening); the reason is mandatory. Confidence is fixed at 0.62: an exit
-    is rule-execution, not a market forecast — documented, not tuned."""
+    is rule-execution, not a market forecast, documented, not tuned."""
     import scan as scanmod
     b = scanmod.source_b(symbol)
     c = scanmod.source_c(symbol, side="SELL")
@@ -273,7 +273,7 @@ def exit_draft(symbol, base_qty, opened_ts, reason):
         "evidence": evidence,
         "signals_used": ["spot_klines", "spot_depth", "fills.jsonl"],
         "thesis": f"Exit of the open {symbol} position: {reason}",
-        "invalidation": "Not applicable — closing order; the position's own "
+        "invalidation": "Not applicable, closing order; the position's own "
                         "invalidation/time stop triggered this exit.",
         "size_reasoning": f"Full position close: {base_qty:g} base units held.",
         "max_hold_hours": 24,
@@ -317,7 +317,7 @@ def _open_positions(include_test=False):
 
 def check_time_stops(include_test=False):
     """R013 mechanism: any open position aged past 72h gets an exit packet
-    PROPOSED at the next scan — the system never silently holds. The packet
+    PROPOSED at the next scan, the system never silently holds. The packet
     goes to the Pilot like any other; R010 stops duplicates while one is
     pending. Returns generated packet ids."""
     generated = []
@@ -325,7 +325,7 @@ def check_time_stops(include_test=False):
         if pos["age_h"] <= 72:
             continue
         if propose.pending_clash(sym, "SELL"):
-            print(f"R013: {sym} aged {pos['age_h']:.1f}h — exit already pending, not duplicated")
+            print(f"R013: {sym} aged {pos['age_h']:.1f}h, exit already pending, not duplicated")
             continue
         draft = exit_draft(sym, pos["qty"], pos["opened_ts"],
                            f"R013 time stop: position age {pos['age_h']:.1f}h exceeds the 72h maximum hold")
@@ -336,7 +336,7 @@ def check_time_stops(include_test=False):
             propose.save_packet_text(pid, text)
             generated.append(pid)
             print(f"R013 TIME STOP: exit packet {pid} proposed for {sym} "
-                  f"(age {pos['age_h']:.1f}h) -> packets/{pid}.txt — Pilot decides")
+                  f"(age {pos['age_h']:.1f}h) -> packets/{pid}.txt, Pilot decides")
         else:
             print(f"R013: {sym} exit draft blocked: {text.splitlines()[0][:120]}")
     return generated
@@ -405,10 +405,10 @@ def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
         "signals_used": ["spot_ticker24hr(all-pairs)", "spot_klines", "spot_depth"],
         "thesis": (f"{cand['symbol']} moved {cand['chg_pct']:+.2f}% in 24h with "
                    f"{n} independent source(s) triggering ({parts}). Mechanical "
-                   f"draft v1 — confidence is the source count mapping, see run.py."),
+                   f"draft v1, confidence is the source count mapping, see run.py."),
         "invalidation": ("The triggering excursion reversing: 24h change sign flip, "
                          "volume ratio back under 1x its 7d average, or the book "
-                         "imbalance crossing back through 1.0 — whichever fired."),
+                         "imbalance crossing back through 1.0, whichever fired."),
         "size_reasoning": (f"{stake} USDT = 20% of live balance (R001 ceiling, "
                            f"6 USDT floor) via place.default_stake."),
         "max_hold_hours": 72,
@@ -449,14 +449,14 @@ def cmd_scan(args=()):
         for sh in shadows:
             print(f"  {sh['symbol']}: {sh['setup']} {sh['n_sources']}-source "
                   f"rr={sh['rr']} v2={sh['v2']:.3f} v3={sh['v3']:.3f}")
-    # R015 vote failures, with the failing dimensions named — the honest
+    # R015 vote failures, with the failing dimensions named, the honest
     # explanation for every classified candidate that produced no packet.
     for cand in result["candidates"]:
         v = cand.get("vote")
         if (cand.get("setup") not in (None, "CHASE", "UNCLASSIFIED")
                 and isinstance(v, dict) and not v["pass"]):
             print(f"  VOTE FAILED (R015): {cand['symbol']} {cand['setup']} "
-                  f"{v['n_pass']}/4 (need {v['need']}) — failing: "
+                  f"{v['n_pass']}/4 (need {v['need']}), failing: "
                   + "; ".join(v["failed"]))
     for cand in result["candidates"]:
         if not cand["packet_worthy"]:
@@ -483,9 +483,9 @@ def cmd_scan(args=()):
         "packets": len(packets),
         "suppressed": len(skipped),
     })
-    # R013: never silently hold — aged positions get exit packets proposed
+    # R013: never silently hold, aged positions get exit packets proposed
     check_time_stops()
-    # FUNNEL SUMMARY — the whole arithmetic in one place (output formatting
+    # FUNNEL SUMMARY, the whole arithmetic in one place (output formatting
     # only, freeze-safe)
     classified = [c for c in result["candidates"]
                   if c.get("setup") not in (None, "CHASE", "UNCLASSIFIED")]
@@ -511,7 +511,7 @@ def cmd_scan(args=()):
         for p in packets:
             print(f"  {p}")
     else:
-        print("NO PACKETS — if nothing else clears the bar today, log it:")
+        print("NO PACKETS, if nothing else clears the bar today, log it:")
         print('  python scripts/propose.py no-proposal "<reason>"')
     return 0
 
@@ -550,11 +550,11 @@ def cmd_verdict(args):
     if verdict == "APPROVED" and not test:
         mode = place.read_mode()
         draft_path = f"logs/approved/{pid}.json"
-        print(f"\nNEXT STEP (MODE={mode}) — place the order:")
+        print(f"\nNEXT STEP (MODE={mode}), place the order:")
         print(f"  1. python scripts/place.py prepare {draft_path} logs/balance-ctx.json")
         print("  2. make the MCP call it prints "
-              + ("(tool_execute wrapping spot.orderTest — validation only)" if mode == "PAPER"
-                 else "(spot_newOrder — Binance will then ask YOU to confirm)"))
+              + ("(tool_execute wrapping spot.orderTest, validation only)" if mode == "PAPER"
+                 else "(spot_newOrder, Binance will then ask YOU to confirm)"))
         print(f"  3. python scripts/place.py record {draft_path} logs/balance-ctx.json <response.json>")
     try:
         import chart
@@ -570,11 +570,11 @@ def decided(proposals):
 
 
 def confidence_drift():
-    """Monitoring only — changes no scores, gates nothing. Every draft's
+    """Monitoring only, changes no scores, gates nothing. Every draft's
     confidence per UTC day (suppressed + decided + pending), with mean,
     median, and the count landing within 0.02 of the 60% floor. Warns when
     the mean rises or the near-floor count grows across three consecutive
-    days — the anti-gaming check for score creep."""
+    days, the anti-gaming check for score creep."""
     import statistics
     from collections import defaultdict
     by_day = defaultdict(list)
@@ -639,7 +639,7 @@ def cmd_status():
         counts = [h["packets"] for h in hist]
         print(f"packets per scan (last {len(counts)}): {', '.join(str(c) for c in counts)}")
         if len(counts) >= 2 and counts[-1] == 0 and counts[-2] == 0:
-            print("NOTE: tape is quiet — two consecutive zero-packet scans. "
+            print("NOTE: tape is quiet, two consecutive zero-packet scans. "
                   "Not an error; no idea clearing the bar is a valid output.")
     else:
         print("packets per scan: no scan history yet")
@@ -692,7 +692,7 @@ def cmd_positions():
     for sym in open_syms:
         opened = datetime.strptime(oldest_open[sym], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
         age_h = (now - opened).total_seconds() / 3600
-        flag = "  << OVER 72h — EXIT PROPOSAL DUE (R013)" if age_h > 72 else \
+        flag = "  << OVER 72h, EXIT PROPOSAL DUE (R013)" if age_h > 72 else \
                f"  ({72 - age_h:.0f}h until R013 time stop)"
         print(f"{sym}: ~{net[sym]:.2f} USDT notional, opened {oldest_open[sym]}, age {age_h:.1f}h{flag}")
     return 0
@@ -739,9 +739,9 @@ def cmd_debrief(args):
         return f"{100*len(a)/len(d):.0f}% ({len(a)} of {len(d)})" if d else "n/a (0 decided)"
 
     lines = [
-        f"# Debrief — {date} (generated by run.py debrief; analysis sections need the Unit)",
+        f"# Debrief, {date} (generated by run.py debrief; analysis sections need the Unit)",
         "",
-        "## Step 1 — The numbers (computed)",
+        "## Step 1, The numbers (computed)",
         f"- Sync Rate today: {rate(approved, dec)}. NO_PROPOSAL counts in the denominator.",
         f"- Sync Rate all-time: {rate([p for p in all_dec if p['verdict']=='APPROVED'], all_dec)}",
         f"- Decided today: {len(dec)} (approved {len(approved)}, rejected {len(rejected)}, "
@@ -749,7 +749,7 @@ def cmd_debrief(args):
         f"- Rejections by code: {dict(reasons) if reasons else 'none'}",
         f"- Fills today: {len(fills)} | notional "
         f"{sum(propose.place.proposal_notional_usdt(f.get('request', {}).get('arguments', f.get('request', {}))) or 0 for f in fills):.2f} USDT"
-        if fills else "- Fills today: 0 | notional 0 USDT | fees 0 USDT — no P&L, stated not omitted",
+        if fills else "- Fills today: 0 | notional 0 USDT | fees 0 USDT, no P&L, stated not omitted",
         f"- Suppressions today: {len(suppressed)} "
         f"(R009: {sum(1 for s in suppressed if s['rule']=='R009')}, "
         f"R010: {sum(1 for s in suppressed if s['rule']=='R010')}, "
@@ -765,28 +765,28 @@ def cmd_debrief(args):
                        for p in inferable if p.get('rr') is not None])
            if any(p.get('rr') is not None for p in inferable) else "none with R:R data yet"),
         f"- Calibration: {len([p for p in all_dec if p.get('confidence')])} decided packets with "
-        "confidence all-time — too few to bucket honestly" if
+        "confidence all-time, too few to bucket honestly" if
         len([p for p in all_dec if p.get('confidence')]) < 10 else
         "- Calibration: see buckets below",
         "- Rule compliance: violations must be counted by the Unit against packets/",
         "",
-        "## Step 2 — What went wrong  [UNIT ANALYSIS REQUIRED — two worst decisions]",
+        "## Step 2, What went wrong  [UNIT ANALYSIS REQUIRED, two worst decisions]",
         "",
-        "## Step 3 — Bias check (computed where possible)",
+        "## Step 3, Bias check (computed where possible)",
         f"- Directional: {len(buys)} of {len(directional)} directional proposals were BUY"
         if directional else "- Directional: no directional proposals today",
         f"- Mean confidence today: {sum(confid)/len(confid):.0%} (n={len(confid)})"
         if confid else "- Confidence: no confidence-bearing proposals today",
         "- Remaining bias checks: [UNIT ANALYSIS REQUIRED or insufficient data]",
         "",
-        "## Step 4 — Learning from the Pilot",
+        "## Step 4, Learning from the Pilot",
         "Only Pilot-logged verdicts count (see CLAUDE.md); spec-superseded "
         "rejections are excluded from preference inference. "
         f"Inferable Pilot verdicts today: "
         f"{sum(1 for p in inferable if p.get('verdict') in ('APPROVED', 'REJECTED'))}."
         " [UNIT ANALYSIS REQUIRED if > 0; otherwise insufficient Pilot signal]",
         "",
-        "## Step 5 — Rulebook diff  [UNIT PROPOSES, PILOT APPROVES — max 2 add, 1 strike]",
+        "## Step 5, Rulebook diff  [UNIT PROPOSES, PILOT APPROVES, max 2 add, 1 strike]",
     ]
     out_dir.mkdir(parents=True, exist_ok=True)
     full_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -796,7 +796,7 @@ def cmd_debrief(args):
         f"Proposals decided: {len(dec)} · Approved: {len(approved)} · Filled: {len(fills)}",
         f"Suppressed pre-packet: {len(suppressed)} (R009/R010)", "",
         "What I got wrong today:",
-        "[FILL: the real mistake — a post without one is written wrong]", "",
+        "[FILL: the real mistake, a post without one is written wrong]", "",
         "What changed in my rulebook:",
         "[FILL: approved diff or 'no change']",
     ]

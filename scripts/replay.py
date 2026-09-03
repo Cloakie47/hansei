@@ -1,4 +1,4 @@
-"""HANSEI replay mode — build-order step 7. Drill the decision loop on
+"""HANSEI replay mode, build-order step 7. Drill the decision loop on
 historical data with symbols anonymised and dates hidden, so the Pilot can
 practise verdicts and the pair (Unit, Pilot) can accumulate agreement data
 without waiting for live confluence.
@@ -8,7 +8,7 @@ flagged "replay": true and NEVER touch logs/proposals.jsonl, Sync Rate, or
 calibration for the live system. This is a drill range, not the range.
 
 Sources: historical order books do not exist, so replay evidence is A
-(cross-sectional over the replay universe) and B (time series) only — two
+(cross-sectional over the replay universe) and B (time series) only, two
 structurally independent sources, satisfying R007. Confidence note, stated
 loudly: with only two sources AVAILABLE, full 2-of-2 confluence maps to
 0.62 (the same "everything available fired" tier that 3-of-3 maps to in
@@ -20,7 +20,7 @@ pairs, which biases toward what is liquid NOW, not at T. Acceptable for a
 decision drill; not usable for strategy backtesting claims.
 
 CALIBRATION CAVEAT (Pilot-directed, 2026-09-02): drills carry A+B evidence
-only — there is no order-book history — so replay verdicts calibrate the
+only, there is no order-book history, so replay verdicts calibrate the
 Pilot on TWO-SOURCE evidence while live packets carry three sources. Replay
 outcomes MUST NOT be used to retune live confidence weights without
 adjusting for the missing C source: a weight fitted on A+B-only data has
@@ -97,7 +97,7 @@ def daily_structure(symbol, t_ms):
         "avg_abs_daily_raw_pct": avg_raw,
         "consol_high": max(float(k[2]) for k in window),
         "consol_low": min(float(k[3]) for k in window),
-        "_daily": daily,  # for the R015 dimensions
+        "_daily": daily, # for the R015 dimensions
     }
 
 
@@ -151,7 +151,7 @@ def analyse(symbol, t_ms):
         "max_drawdown_pct": (min(float(k[3]) for k in future[:25]) / last - 1) * 100,
     }
     # Current-spec additions: setup classification + structural R:R + v3
-    # confidence, matching what the live system proposes (A+B only — no
+    # confidence, matching what the live system proposes (A+B only, no
     # order-book history, so C-dependent v3 terms simply contribute zero).
     ds = daily_structure(symbol, t_ms)
     lo7 = min(float(k[3]) for k in past[-168:])
@@ -166,7 +166,7 @@ def analyse(symbol, t_ms):
         setup, setup_detail = scanmod.classify_setup(row, b_like)
         if setup not in ("CHASE", "UNCLASSIFIED"):
             rr, _rr_refusal = scanmod.risk_reward(row, b_like, setup)
-            # R015 vote at T (final spec) — VWAP proxied from the last 24 1h
+            # R015 vote at T (final spec), VWAP proxied from the last 24 1h
             # candles' quote/base volume at T
             base_vol24 = sum(float(k[5]) for k in past[-24:])
             vwap24 = (vol24 / base_vol24) if base_vol24 else last
@@ -195,20 +195,20 @@ def analyse(symbol, t_ms):
 
 
 def render(rid, alias, f, conf, blind=False):
-    # blind=True (mixed calibration sessions): drop the SETUP and R:R lines —
+    # blind=True (mixed calibration sessions): drop the SETUP and R:R lines,
     # they encode the live system's own verdict and would give away
     # good-vs-bad. The Pilot judges the raw A/B evidence, which is exactly
     # the "modest up-move, elevated volume, upper range" shape whose
     # approval the drill is meant to test.
     rr = f.get("rr")
     head = [
-        f"━━━ REPLAY PACKET {rid} ━━━  (DRILL — historical, anonymised, not a live proposal)",
+        f"━━━ REPLAY PACKET {rid} ━━━  (DRILL, historical, anonymised, not a live proposal)",
         "",
         f"PROPOSAL   BUY [stake] USDT of {alias} (spot, market)",
-        f"CONFIDENCE {conf:.0%}  (v3, A+B evidence only — C-dependent terms zero, no book history)",
+        f"CONFIDENCE {conf:.0%}  (v3, A+B evidence only, C-dependent terms zero, no book history)",
     ]
     if not blind:
-        head.append(f"SETUP      {f.get('setup')} — {f.get('setup_detail', '')}")
+        head.append(f"SETUP      {f.get('setup')}, {f.get('setup_detail', '')}")
         if rr:
             head.append(f"R:R        {rr['rr']:.1f} : 1 (target {rr['target']:g}, "
                         f"stop {rr['stop']:g}, entry ref {rr['entry']:g})")
@@ -250,7 +250,7 @@ def cmd_new(args):
     tickers = get("ticker/24hr")
     universe = sorted((t["symbol"] for t in tickers
                        if t["symbol"] in pairs and float(t["quoteVolume"]) >= scanmod.VOLUME_FLOOR))
-    print(f"replay universe: {len(universe)} pairs (today's floor-passers — "
+    print(f"replay universe: {len(universe)} pairs (today's floor-passers, "
           "look-ahead caveat applies, see file header)")
     feats = []
     for sym in universe:
@@ -264,7 +264,7 @@ def cmd_new(args):
     aliases = [f"SYM-{i:02d}" for i in range(1, len(feats) + 1)]
     rng.shuffle(aliases)
     session = {"sid": sid, "t_ms": t_ms, "days_ago": days, "seed": seed,
-               "spec": "classifier-v3",  # current-spec drills; older sessions lack this
+               "spec": "classifier-v3", # current-spec drills; older sessions lack this
                "packets": {}, "mapping": {}}
     n_pack = 0
     for f, alias in zip(feats[:DEEP], aliases):
@@ -296,13 +296,13 @@ def cmd_new(args):
     print(f"session {sid}: {n_pack} replay packets from {len(feats)} analysed pairs. "
           f"Decide with: python scripts/replay.py verdict <rid> y|n [code]")
     if n_pack == 0:
-        print("(quiet historical window — try another --days-ago)")
+        print("(quiet historical window, try another --days-ago)")
     return 0
 
 
 def cmd_mixed(args):
-    """Blind calibration session with a DELIBERATE quality mix — genuine
-    setups AND chase-shaped candidates — drawn from several real historical
+    """Blind calibration session with a DELIBERATE quality mix, genuine
+    setups AND chase-shaped candidates, drawn from several real historical
     windows. Unlike `new`, it does NOT gate on the full spec: the point is
     to give the Pilot rejections to make, so the drill stats mean something.
     Each packet stores the live system's own verdict (would_pass + why) as
@@ -310,7 +310,7 @@ def cmd_mixed(args):
     blind. Renders in the same format as `new` so it is indistinguishable.
 
     Selection per window: the single best full-gate passer (if any) plus the
-    highest-ranked CHASE/vote-fail candidate — a matched good/bad pair — so
+    highest-ranked CHASE/vote-fail candidate, a matched good/bad pair, so
     the session is genuinely mixed by construction, not by luck."""
     seed = int(args[args.index("--seed") + 1]) if "--seed" in args else 42
     windows = [int(x) for x in args[args.index("--windows") + 1].split(",")] \
@@ -319,7 +319,7 @@ def cmd_mixed(args):
     sid = f"mix{seed}"
     session = {"sid": sid, "seed": seed, "spec": "classifier-v3-mixed",
                "windows": windows, "packets": {}, "mapping": {}, "t_by_rid": {}}
-    picks = []  # (feat, t_ms, kind)
+    goods, bads = [], []
     pairs, _ = scanmod.active_usdt_pairs()
     for days in windows:
         t_ms = int((datetime.now(timezone.utc) - timedelta(days=days))
@@ -347,9 +347,16 @@ def cmd_mixed(args):
                     or (f.get("setup") not in ("UNCLASSIFIED",)
                         and f.get("vote") and not f["vote"]["pass"])), None)
         if good:
-            picks.append((good, t_ms, "would-pass"))
+            goods.append((good, t_ms, "would-pass"))
         if bad and bad is not good:
-            picks.append((bad, t_ms, "would-reject"))
+            bads.append((bad, t_ms, "would-reject"))
+    # Guarantee a genuine mix: take up to 2 goods (if any exist), fill the
+    # rest with bads to 6, then shuffle so order reveals nothing. An all-one-
+    # kind set is a broken drill, so goods are included deliberately, not by
+    # luck of the shuffle.
+    rng.shuffle(goods)
+    rng.shuffle(bads)
+    picks = goods[:2] + bads[:6 - min(len(goods), 2)]
     rng.shuffle(picks)
     aliases = [f"SYM-{i:02d}" for i in range(1, len(picks) + 20)]
     rng.shuffle(aliases)
@@ -372,11 +379,12 @@ def cmd_mixed(args):
         session["t_by_rid"][rid] = t_ms
     SESSIONS.mkdir(parents=True, exist_ok=True)
     (SESSIONS / f"{sid}.json").write_text(json.dumps(session, indent=2), encoding="utf-8")
-    gt = [p["ground_truth"] for p in session["packets"].values()]
-    print(f"mixed session {sid}: {n} BLIND packets "
-          f"({gt.count('would-pass')} live-pass, {gt.count('would-reject')} live-reject) "
-          f"from windows {windows}. Ground truth hidden in the session file; "
-          f"packets carry no setup/verdict. Decide blind:")
+    # Do NOT print the pass/reject breakdown: that ratio is aggregate ground
+    # truth and leaks information about the blind set. Only the count and the
+    # rids are printed; the mix stays sealed in the session file.
+    print(f"mixed session {sid}: {n} BLIND packets from {len(windows)} real "
+          f"windows. Ground truth (which the live system would pass or reject) "
+          f"is sealed in the session file and printed to no one. Decide blind:")
     for rid in session["packets"]:
         print(f"  python scripts/replay.py verdict {rid} y|n [code]   "
               f"({RPACKETS / (rid + '.txt')})")
@@ -404,18 +412,18 @@ def cmd_pending():
     for s in _load_sessions().values():
         if s.get("retired"):
             continue  # documented catches, not drills
-        tag = "" if s.get("spec") == "classifier-v3" else "  [PRE-CLASSIFIER SPEC — old evidence format]"
+        tag = "" if s.get("spec") == "classifier-v3" else "  [PRE-CLASSIFIER SPEC, old evidence format]"
         blind = s.get("spec") == "classifier-v3-mixed"
         for rid, p in s["packets"].items():
             if rid not in done:
                 # mixed sessions stay blind: no setup/rr leak in the listing
                 extra = "" if blind else (f"  {p['setup']} rr={p['rr']}" if p.get("setup") else "")
-                mixtag = "  [BLIND MIXED — no setup shown]" if blind else tag
+                mixtag = "  [BLIND MIXED, no setup shown]" if blind else tag
                 print(f"{rid}  {p['alias']}  BUY  {p['confidence']:.0%}{extra}  "
                       f"({RPACKETS / (rid + '.txt')}){mixtag}")
                 n += 1
     if not n:
-        print("no pending replay packets — create a session: python scripts/replay.py new --days-ago N")
+        print("no pending replay packets, create a session: python scripts/replay.py new --days-ago N")
     return 0
 
 
@@ -434,7 +442,7 @@ def cmd_verdict(args):
     for s in _load_sessions().values():
         if rid in s["packets"]:
             if s.get("retired"):
-                print(f"{rid} is RETIRED — {s['retired'][:120]}...")
+                print(f"{rid} is RETIRED, {s['retired'][:120]}...")
                 return 1
             p = s["packets"][rid]
             entry = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -470,11 +478,11 @@ def cmd_stats():
         r["outcome"] = sessions[r["sid"]]["packets"][r["rid"]]["outcome"]
     app = [r for r in rows if r["verdict"] == "APPROVED"]
     rej = [r for r in rows if r["verdict"] == "REJECTED"]
-    print(f"replay decisions: {len(rows)} (approved {len(app)}, rejected {len(rej)}) — "
+    print(f"replay decisions: {len(rows)} (approved {len(app)}, rejected {len(rej)}), "
           f"drill data, never mixed into live Sync Rate")
     print("CAVEAT: A+B evidence only (no order-book history). Do not retune live "
           "confidence weights from these outcomes without adjusting for the "
-          "missing C source — see the header of scripts/replay.py.")
+          "missing C source: see the header of scripts/replay.py.")
     def mean24(rs):
         vals = [r["outcome"]["chg_24h_pct"] for r in rs if r["outcome"]["chg_24h_pct"] is not None]
         return sum(vals) / len(vals) if vals else None

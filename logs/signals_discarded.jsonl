@@ -168,3 +168,17 @@
 {"ts": "2026-09-02T19:13:51Z","ticker": "PROM","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.7% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
 {"ts": "2026-09-02T19:13:51Z","ticker": "HEMI","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.3% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
 {"ts": "2026-09-02T19:13:51Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 21.7m above floor — excluded from universe"}
+{"ts": "2026-09-02T19:18:57Z","ticker": "PROM","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.7% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T19:18:57Z","ticker": "HEMI","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.3% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T19:18:57Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 21.7m above floor — excluded from universe"}
+{"ts": "2026-09-02T19:59:51Z","ticker": "PROM","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.7% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T19:59:51Z","ticker": "HEMI","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.3% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T19:59:51Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 21.2m above floor — excluded from universe"}
+{"ts": "2026-09-02T20:00:50Z","ticker": "PROM","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.7% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T20:00:50Z","ticker": "HEMI","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.3% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T20:00:50Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 21.2m above floor — excluded from universe"}
+{"ts": "2026-09-02T20:03:51Z","ticker": "PROM","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.7% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T20:03:51Z","ticker": "HEMI","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.3% > 12% — not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-02T20:03:51Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 21.1m above floor — excluded from universe"}
+{"ts": "2026-09-03T05:09:36Z","ticker": "PROM","contract": null,"chainId": null,"reason": "R016: raw avg daily move 12.5% > 12%, not swing-tradeable on the 72h clock, excluded from universe"}
+{"ts": "2026-09-03T05:09:36Z","ticker": "SNDKB","contract": null,"chainId": null,"reason": "R011: SNDKBUSDT is a tokenized equity/RWA pair (TRD_GRP_261 marker), quote volume 21.1m above floor, excluded from universe"}

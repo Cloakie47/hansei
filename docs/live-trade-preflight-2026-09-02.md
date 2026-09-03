@@ -1,4 +1,4 @@
-# Live-trade pre-flight — verified 2026-09-02
+# Live-trade pre-flight, verified 2026-09-02
 
 Status of every safety layer before the first LIVE order. Nothing has been
 placed. Flipping MODE is the Pilot's action, not the Unit's.
@@ -6,7 +6,7 @@ placed. Flipping MODE is the Pilot's action, not the Unit's.
 ## 1. Funds
 
 - 40 USDT confirmed in the SPOT wallet of the Agentic sub-account (uid
-  1273127438). No transfer needed — Funding wallet is 0.
+  1273127438). No transfer needed, Funding wallet is 0.
 - Source of truth: wallet_queryUserWalletBalance (quoteAsset=USDT) shows
   Spot = 40; depositHistory confirms 40 USDT via BSC, status 1 (success),
   walletType 0 = Spot, credited 2026-09-01T18:16Z.
@@ -74,10 +74,10 @@ shape ("mode": "LIVE" instead of "PAPER").
    Pilot answers y or n. On n: reason code, logged, done. Nothing is called.
 3. On y: the verdict is logged to proposals.jsonl (APPROVED), then
    place.py prepare runs the affordability pre-flight again against the
-   live balance and emits the routed call — with MODE=LIVE that is
+   live balance and emits the routed call, with MODE=LIVE that is
    spot_newOrder with the packet's arguments, newClientOrderId = packet id.
 4. The session invokes spot_newOrder via the MCP server. **Binance then
-   asks the Pilot to confirm the order in their own UI — this is Binance's
+   asks the Pilot to confirm the order in their own UI, this is Binance's
    enforcement layer (hard constraint 1), not ours. The order does not
    execute until the Pilot confirms it there.** Expect it; let it happen.
 5. On fill, place.py record appends to fills.jsonl with "mode": "LIVE",

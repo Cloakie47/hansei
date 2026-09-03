@@ -1,4 +1,4 @@
-"""HANSEI signal scanner — CEX-native evidence from the universe we can trade.
+"""HANSEI signal scanner, CEX-native evidence from the universe we can trade.
 
 Three structurally independent sources (R007):
 
@@ -13,10 +13,10 @@ Three structurally independent sources (R007):
                       mid. "What is sitting there right now."
 
 Each emitted evidence line is tagged with its source letter. propose.py
-enforces R007 (>= 2 distinct sources) from those tags — three readings of one
+enforces R007 (>= 2 distinct sources) from those tags, three readings of one
 source never count as two sources.
 
-Data comes from the public api.binance.com market-data endpoints — the same
+Data comes from the public api.binance.com market-data endpoints, the same
 data the MCP read tools (spot_ticker24hr / spot_klines / spot_depth) wrap.
 Account state and order placement remain MCP-only.
 
@@ -35,11 +35,11 @@ from pathlib import Path
 
 API = "https://api.binance.com/api/v3"
 
-# Stable/fiat quote assets masquerading as base assets of USDT pairs —
+# Stable/fiat quote assets masquerading as base assets of USDT pairs,
 # never trade candidates.
 STABLE_BASES = {"USDC", "FDUSD", "TUSD", "DAI", "EUR", "EURI", "AEUR", "USDP",
                 "XUSD", "USD1", "BFUSD", "PAXG", "RLUSD", "USDE", "USDS",
-                "FRAX", "SUSD", "XAUT"}  # XAUT/PAXG: gold trackers — not
+                "FRAX", "SUSD", "XAUT"}  # XAUT/PAXG: gold trackers, not
                 # stable, but pegged to an external market like bstocks
                 # (RLUSD slipped through and classified as a "pullback")
 
@@ -58,10 +58,10 @@ TOP_CANDIDATES = 16  # deep-scan cap; 8 -> 12 -> 16 (floor drop widened the pool
 # volatility is the point.
 AVG_DAILY_CAP = 8.0
 # R016 (Pilot-approved 2026-09-02): raw average daily move above this and
-# the pair leaves the universe — not swing-tradeable on a 72h clock.
+# the pair leaves the universe, not swing-tradeable on a 72h clock.
 MAX_AVG_DAILY_PCT = 12.0
 # R:R reachability (2026-09-02): a target must be reachable inside the R013
-# 72h hold — capped at 3.0x the pair's RAW average daily move (three full
+# 72h hold, capped at 3.0x the pair's RAW average daily move (three full
 # average days of directional travel = a generous full-trend bound). A 23:1
 # or 268:1 R:R is always an artifact of a fantasy target or hair-width
 # stop, never a signal.
@@ -70,7 +70,7 @@ TARGET_TRAVEL_MULT = 3.0
 A_CHG_PCT = 4.0          # sort normalizer + fallback |24h change| threshold
 A_CHG_PCT_MIN = 2.5      # relative-trigger floor: never fire under 2.5%
 A_CHG_VOL_MULT = 1.6     # fire when |chg| >= 1.6x the pair's own 7d avg
-                         # abs daily change — majors trigger on moves that are
+                         # abs daily change, majors trigger on moves that are
                          # large FOR THEM (fixed 4% was blind to ETH-class vol)
 A_VOL_RATIO = 1.8        # 24h volume >= 1.8x own 7d average
 A_VWAP_DIST = 1.5        # |last vs weightedAvgPrice| in %
@@ -92,7 +92,7 @@ def get(path, **params):
 # the volume floor. Detection is FUNCTIONAL, not a ticker blocklist: every
 # bstock pair carries permission group TRD_GRP_261 in exchangeInfo and no
 # crypto pair does (verified 2026-09-02: exactly the 68 tokenized names,
-# zero false positives — TRD_GRP_004-absence was rejected as a marker
+# zero false positives, TRD_GRP_004-absence was rejected as a marker
 # because it also catches privacy coins and fiat). Group ids are opaque, so
 # if the marker ever matches nothing we warn instead of silently passing
 # equities through.
@@ -114,14 +114,14 @@ def active_usdt_pairs():
             continue
         pairs[s["symbol"]] = s
     if not bstocks:
-        print("WARNING: R011 bstock marker matched zero pairs — the "
+        print("WARNING: R011 bstock marker matched zero pairs, the "
               f"{BSTOCK_MARKER} detector may have rotted; verify before trusting "
               "the universe.", file=sys.stderr)
     return pairs, bstocks
 
 
 # ---------------------------------------------------------------------------
-# SOURCE A — cross-sectional
+# SOURCE A, cross-sectional
 
 def source_a(floor=VOLUME_FLOOR):
     pairs, bstocks = active_usdt_pairs()
@@ -131,7 +131,7 @@ def source_a(floor=VOLUME_FLOOR):
         qv = float(t["quoteVolume"])
         if t["symbol"] in bstocks:
             if qv >= floor:
-                # would have entered the pool — log the exclusion event
+                # would have entered the pool, log the exclusion event
                 r011_floor_passing.append({"symbol": t["symbol"], "quote_volume": qv})
             continue
         if t["symbol"] not in pairs:
@@ -149,8 +149,8 @@ def source_a(floor=VOLUME_FLOOR):
             "high": float(t["highPrice"]),
             "low": float(t["lowPrice"]),
         })
-    # RANKING (Pilot-directed 2026-09-02): by 7d and 14d trailing return —
-    # volatility-normalised per pair — NOT by 24h change. 24h change is noise
+    # RANKING (Pilot-directed 2026-09-02): by 7d and 14d trailing return,
+    # volatility-normalised per pair, NOT by 24h change. 24h change is noise
     # and ranking on it made the scanner a top-movers screen. 24h change stays
     # displayed. Daily klines are fetched for every floor-passer up front
     # (the ranking needs them) and reused by the deep loop.
@@ -175,7 +175,7 @@ def source_a(floor=VOLUME_FLOOR):
     for ex in r016_excluded:
         _log_discard_simple(ex["symbol"],
                             f"R016: raw avg daily move {ex['avg_abs_daily_raw_pct']:.1f}% "
-                            f"> {MAX_AVG_DAILY_PCT:.0f}% — not swing-tradeable on the "
+                            f"> {MAX_AVG_DAILY_PCT:.0f}%, not swing-tradeable on the "
                             f"72h clock, excluded from universe")
     rows.sort(key=lambda r: r["rank_score"], reverse=True)
     for r in rows[:TOP_CANDIDATES * 3]:
@@ -241,7 +241,7 @@ def a_evidence(row):
 
 
 # ---------------------------------------------------------------------------
-# SOURCE B — time series
+# SOURCE B, time series
 
 def source_b(symbol):
     h1 = get("klines", symbol=symbol, interval="1h", limit=168)
@@ -278,16 +278,16 @@ def source_b(symbol):
 
 
 # ---------------------------------------------------------------------------
-# SOURCE C — order book
+# SOURCE C, order book
 
 def source_c(symbol, side="BUY"):
-    """Order book — DIRECTIONAL. An imbalance only triggers, and only counts
+    """Order book, DIRECTIONAL. An imbalance only triggers, and only counts
     as supporting evidence, when it aligns with the draft side: bid-heavy
     supports a BUY, ask-heavy supports a SELL. A book leaning the other way
-    is tagged C-CONTRA — shown in the packet as contradicting context, never
+    is tagged C-CONTRA, shown in the packet as contradicting context, never
     counted by R007 as a supporting source. (Sign defect fixed 2026-09-02;
     previously |imbalance| fired either way and a bearish book strengthened
-    BUY drafts — see logs/confidence-calibration-analysis.md.)"""
+    BUY drafts: see logs/confidence-calibration-analysis.md.)"""
     depth = get("depth", symbol=symbol, limit=100)
     bids = [(float(p), float(q)) for p, q in depth["bids"]]
     asks = [(float(p), float(q)) for p, q in depth["asks"]]
@@ -320,7 +320,7 @@ def source_c(symbol, side="BUY"):
 
 # ---------------------------------------------------------------------------
 # Setup classifier (Pilot-directed 2026-09-02). The excursion ranking
-# structurally surfaces movers — it is built to chase. Every candidate is
+# structurally surfaces movers, it is built to chase. Every candidate is
 # classified before it can become a packet; CHASE and UNCLASSIFIED are
 # BLOCKED, fail-closed. Thresholds are transparent and per-pair (multiples
 # of the pair's own average daily move), and every classification is logged
@@ -330,18 +330,18 @@ EXTENDED_MULT = 2.0     # |24h chg| >= 2x own avg daily move = extended
 EXTENDED_3D_MULT = 3.0  # or 3d chg >= 3x
 NEAR_HIGHS = 0.70       # range position counted as "near range highs"
 # Support zone is PER-PAIR (Pilot-approved 2026-09-02): within 1.5x the
-# pair's own average daily move of the SMA20 — the same volatility-relative
+# pair's own average daily move of the SMA20: the same volatility-relative
 # pattern as the A trigger. Replaced a fixed 4% that was provably too tight
 # for a universe averaging 4-8% daily moves (and it tightens for quiet
 # majors, so this is scaling, not loosening).
 SUPPORT_ZONE_MULT = 1.5
 DECLINE_5D_MULT = 2.5   # 5d decline >= 2.5x own avg = "extended decline"
 # BASING (Pilot-approved 2026-09-02): accumulation at the lows on QUIET
-# volume — the reversal that has not announced itself yet.
+# volume, the reversal that has not announced itself yet.
 BASING_RANGE_MAX = 0.25    # bottom quarter of the 7d range
 BASING_DECLINE_MULT = 2.0  # got here via a decline >= 2x own avg (5d)
 BASING_VOL_MAX = 0.8       # volume CONTRACTED vs prior days (quiet, not capitulation)
-BASING_CALM_MULT = 1.0     # today's move within 1x own avg — no longer knifing
+BASING_CALM_MULT = 1.0     # today's move within 1x own avg, no longer knifing
 
 
 def classify_setup(row, b):
@@ -354,7 +354,7 @@ def classify_setup(row, b):
     extended = abs(chg24) >= EXTENDED_MULT * avg or abs(chg3) >= EXTENDED_3D_MULT * avg
     if extended and rp >= NEAR_HIGHS:
         return "CHASE", (f"extended ({chg24:+.1f}% 24h / {chg3:+.1f}% 3d vs avg "
-                         f"{avg:.1f}%) and at {rp:.0%} of range — blocked")
+                         f"{avg:.1f}%) and at {rp:.0%} of range, blocked")
     trend_up = last > sma20 and row.get("sma20_rising")
     zone_pct = SUPPORT_ZONE_MULT * avg  # per-pair, volatility-scaled
     near_support = abs(last - sma20) / sma20 * 100 <= zone_pct
@@ -365,7 +365,7 @@ def classify_setup(row, b):
     consol_high = row.get("consol_high")
     # A breakout must be an UPWARD move: an asset down on the day that merely
     # sits above an old consolidation is not breaking out (0G defect,
-    # 2026-09-02 — classified BREAKOUT while -13% on the day).
+    # 2026-09-02, classified BREAKOUT while -13% on the day).
     if (consol_high and last > consol_high and chg24 > 0
             and (b["vol_expand"] or 0) >= B_VOL_EXPAND):
         width_pct = (consol_high - row["consol_low"]) / last * 100
@@ -381,23 +381,23 @@ def classify_setup(row, b):
             and abs(chg24) <= BASING_CALM_MULT * avg):
         return "BASING", (f"declined {chg5:+.1f}% (5d, vs avg {avg:.1f}%), now at "
                           f"{rp:.0%} of range on {b['vol_expand']:.2f}x quiet volume, "
-                          f"day move {chg24:+.1f}% within 1x avg — accumulation, not capitulation")
+                          f"day move {chg24:+.1f}% within 1x avg, accumulation, not capitulation")
     # DELIBERATE EXCLUSION (Pilot-confirmed 2026-09-02): uptrend continuation
     # WITHOUT a pullback stays UNCLASSIFIED. It is the chase-guard's
-    # neighbour — do not "fix" this by adding a continuation category.
+    # neighbour, do not "fix" this by adding a continuation category.
     return "UNCLASSIFIED", (f"fits no setup: chg24 {chg24:+.1f}%, 3d {chg3:+.1f}%, "
-                            f"range {rp:.0%}, trend_up={trend_up} — blocked fail-closed")
+                            f"range {rp:.0%}, trend_up={trend_up}, blocked fail-closed")
 
 
 def derive_stop(row, b, setup):
     """Setup-aware structural stop (Pilot-approved 2026-09-02, all five
     drafted choices as-is). Returns (stop, basis_text) on success or
-    (None, refusal_reason) — fail-closed, never estimated.
+    (None, refusal_reason), fail-closed, never estimated.
 
-    PULLBACK: below the PRIOR higher-low — the most recent daily fractal
+    PULLBACK: below the PRIOR higher-low, the most recent daily fractal
     swing low below entry and outside the current leg (last 3 bars are the
     retrace itself). BASING: below the 5-day base floor (the classifier's
-    own horizon). BREAKOUT: unchanged 48h swing low (zero failures — the
+    own horizon). BREAKOUT: unchanged 48h swing low (zero failures, the
     pre-break consolidation is the right structure). REVERSAL: 48h
     capitulation low with the buffer (amendment). All stops carry a
     0.25x-avg-daily-move buffer so a wick-sweep does not tag the tick."""
@@ -412,7 +412,7 @@ def derive_stop(row, b, setup):
 
     if setup == "PULLBACK":
         if len(daily) < 10:
-            return None, "no qualifying fractal — under 10 daily bars of structure"
+            return None, "no qualifying fractal, under 10 daily bars of structure"
         lows = [float(k[3]) for k in daily]
         swings = [(i, lows[i]) for i in range(2, len(lows) - 2)
                   if lows[i] < min(lows[i-1], lows[i-2])
@@ -425,9 +425,9 @@ def derive_stop(row, b, setup):
         cur_leg_low = min(lows[-3:])
         if prior_low > cur_leg_low:
             return None, (f"prior higher-low {prior_low:g} ({bar_date(daily[i])}) already "
-                          f"broken by the current leg's low {cur_leg_low:g} — "
+                          f"broken by the current leg's low {cur_leg_low:g}, "
                           f"uptrend structure failed")
-        return prior_low - buffer, (f"prior higher-low {prior_low:g} — daily fractal of "
+        return prior_low - buffer, (f"prior higher-low {prior_low:g}, daily fractal of "
                                     f"{bar_date(daily[i])} ({len(daily)-1-i} bars back), "
                                     f"minus 0.25x-avg buffer; the level whose loss breaks "
                                     f"the uptrend the pullback thesis buys")
@@ -435,19 +435,19 @@ def derive_stop(row, b, setup):
         if len(daily) < 5:
             return None, "fewer than 5 daily bars for the basing window"
         floor_ = min(float(k[3]) for k in daily[-5:])
-        return floor_ - buffer, (f"base floor {floor_:g} — 5-day low "
+        return floor_ - buffer, (f"base floor {floor_:g}, 5-day low "
                                  f"({bar_date(daily[-5])} to {bar_date(daily[-1])}), minus "
                                  f"0.25x-avg buffer; below the floor the base has failed")
     stop48 = b["swing_low_48h"]
     if setup == "REVERSAL":
         return stop48 - buffer, (f"capitulation low {stop48:g} (48h swing low) minus "
                                  f"0.25x-avg buffer; below it the reversal is dead")
-    return stop48, f"48h swing low {stop48:g} — the pre-break consolidation zone"
+    return stop48, f"48h swing low {stop48:g}, the pre-break consolidation zone"
 
 
 def risk_reward(row, b, setup):
     """Structural R:R. Returns (rr_dict, None) on success or
-    (None, refusal_reason) — every refusal states its specific cause."""
+    (None, refusal_reason), every refusal states its specific cause."""
     entry = b["last"]
     stop, basis = derive_stop(row, b, setup)
     if stop is None:
@@ -464,13 +464,13 @@ def risk_reward(row, b, setup):
         if target > travel_cap:
             target, capped = travel_cap, True
     if target <= entry:
-        return None, f"R014 stop refusal ({setup}): no upside — target {target:g} <= entry {entry:g}"
+        return None, f"R014 stop refusal ({setup}): no upside, target {target:g} <= entry {entry:g}"
     if entry <= stop:
         return None, f"R014 stop refusal ({setup}): derived stop {stop:g} at/above entry {entry:g}"
     # degenerate guard (kept): a stop within half an average day is noise
     avg = row.get("avg_abs_daily_pct")
     if avg and (entry - stop) < entry * (0.5 * avg / 100):
-        return None, (f"R014 stop refusal ({setup}): degenerate guard — buffered stop "
+        return None, (f"R014 stop refusal ({setup}): degenerate guard, buffered stop "
                       f"{stop:g} within 0.5x avg daily move of entry {entry:g}")
     return {"entry": entry, "stop": stop, "target": target,
             "target_capped_72h": capped, "stop_basis": basis,
@@ -478,7 +478,7 @@ def risk_reward(row, b, setup):
 
 
 # ---------------------------------------------------------------------------
-# Indicator vote — R015, Pilot-approved 2026-09-02, supersedes R007
+# Indicator vote, R015, Pilot-approved 2026-09-02, supersedes R007
 # (docs/proposed-indicator-vote.md). Five dimensions, pairwise correlation
 # measured < 0.7 on a 341-sample panel; LOCATION is the weakest (r 0.53-0.59
 # vs three others) and is kept at full weight by Pilot decision. Checklists
@@ -500,17 +500,17 @@ def compute_dimensions(daily, btc_closes, vwap_dist_pct):
     c = closes[-1]
     chgs = [abs(closes[i] / closes[i - 1] - 1) * 100 for i in range(-14, 0)]
     avg = min(sum(chgs) / len(chgs), AVG_DAILY_CAP)  # capped: thresholds only
-    # TREND — structure primary, SMA confirmation
+    # TREND, structure primary, SMA confirmation
     hh = max(highs[-10:]) > max(highs[-20:-10])
     hl = min(lows[-10:]) > min(lows[-20:-10])
     sma20 = sum(closes[-20:]) / 20
-    # MOMENTUM — 7/14d, relative to BTC
+    # MOMENTUM, 7/14d, relative to BTC
     ret7 = (c / closes[-8] - 1) * 100
     ret14 = (c / closes[-15] - 1) * 100
     b = btc_closes
     rel7 = ret7 - (b[-1] / b[-8] - 1) * 100
     rel14 = ret14 - (b[-1] / b[-15] - 1) * 100
-    # VOLATILITY STATE — bandwidth percentile of own trailing 60d
+    # VOLATILITY STATE, bandwidth percentile of own trailing 60d
     def bw(i):
         w = closes[i - 20:i]
         m = sum(w) / 20
@@ -522,7 +522,7 @@ def compute_dimensions(daily, btc_closes, vwap_dist_pct):
     bws5 = bws[:-5] or bws
     bw_5ago = bws[-6] if len(bws) >= 6 else bw_now
     bw_pct_5ago = sum(1 for x in bws5 if x <= bw_5ago) / len(bws5)
-    # PARTICIPATION — signed volume share (directional)
+    # PARTICIPATION, signed volume share (directional)
     def share(a, z):
         num = sum((1 if closes[i] >= opens[i] else -1) * qv[i] for i in range(a, z))
         den = sum(qv[a:z])
@@ -534,7 +534,7 @@ def compute_dimensions(daily, btc_closes, vwap_dist_pct):
         qv[i] >= 3 * avg_vol14 and closes[i] < opens[i]
         and any(closes[j] >= opens[j] for j in range(i + 1, 0))
         for i in range(-3, 0))
-    # LOCATION — Bollinger %B + VWAP position
+    # LOCATION, Bollinger %B + VWAP position
     sd = statistics.pstdev(closes[-20:])
     pct_b = (c - (sma20 - 2 * sd)) / (4 * sd) if sd else 0.5
     return {
@@ -574,7 +574,7 @@ def trigger_families(triggers_by_source):
 def independent_source_count(triggers_by_source):
     """Sources contributing at least one NEW measured quantity, in A/B/C
     order. This DEDUPLICATES (B triggering only vol-expand after A's vol
-    adds nothing) and can never exceed the plain source count — the first
+    adds nothing) and can never exceed the plain source count, the first
     'families' implementation multiplied one source's facets into extra
     signals, which loosened tiers; caught in the historical re-score and
     corrected the same day (2026-09-02)."""
@@ -618,7 +618,7 @@ def breakout_retest_held(row):
 
 
 def setup_vote(setup, d):
-    """(vote dict) — which checklist items passed for this setup."""
+    """(vote dict), which checklist items passed for this setup."""
     if d is None:
         return {"pass": False, "n_pass": 0, "need": VOTE_NEED.get(setup, 4),
                 "passed": [], "failed": ["insufficient history for dimensions"]}
@@ -702,7 +702,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
             "contract": None, "chainId": None,
             "reason": (f"R011: {ex['symbol']} is a tokenized equity/RWA pair "
                        f"({BSTOCK_MARKER} marker), quote volume "
-                       f"{ex['quote_volume']/1e6:.1f}m above floor — excluded from universe"),
+                       f"{ex['quote_volume']/1e6:.1f}m above floor, excluded from universe"),
         })
     candidates = []
     setups_log = Path(__file__).resolve().parent.parent / "logs" / "setups.jsonl"
@@ -712,7 +712,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
         a_ev, a_trig = a_evidence(row)
         b = source_b(row["symbol"])
         # Entry scans hunt longs (spot, nothing held short); exit packets call
-        # source_c with side="SELL" directly — the side always comes from the
+        # source_c with side="SELL" directly, the side always comes from the
         # caller's intent, never from inside source_c.
         c = source_c(row["symbol"], side=SCAN_SIDE)
         setup, setup_detail = classify_setup(row, b)
@@ -732,7 +732,7 @@ def scan(floor=VOLUME_FLOOR, top=TOP_CANDIDATES):
         if rr_refusal:
             entry["rr_refusal"] = rr_refusal  # every refusal states its cause
         if vote is not None:
-            # R015: named failures are the artifact — "zero packets and here
+            # R015: named failures are the artifact, "zero packets and here
             # is exactly why" beats a silent zero.
             entry["vote_pass"] = vote["pass"]
             entry["vote_n_pass"] = vote["n_pass"]
@@ -808,7 +808,7 @@ def main(argv):
         floor = int(args[args.index("--floor") + 1])
     if "--top" in args:
         top = int(args[args.index("--top") + 1])
-    # Startup balance freshness check — run at the start of every scan when a
+    # Startup balance freshness check, run at the start of every scan when a
     # balance context is supplied (the session fetches both MCP endpoints).
     if "--balance-ctx" in args:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -817,7 +817,7 @@ def main(argv):
         ok, msg = place.freshness_check(ctx["spot_account"], ctx.get("wallet_summary"))
         print(msg, file=sys.stderr)
     else:
-        print("NOTE: balance freshness check skipped — no --balance-ctx supplied. "
+        print("NOTE: balance freshness check skipped, no --balance-ctx supplied. "
               "Supply {spot_account, wallet_summary} JSON to compare sources.",
               file=sys.stderr)
     if len(argv) > 1 and argv[1] == "scan":

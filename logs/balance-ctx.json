@@ -1,5 +1,5 @@
 {
-  "fetched_at": 1788376413251,
+  "fetched_at": 1788412137930,
   "spot_account": {
     "makerCommission": 10,
     "takerCommission": 10,
@@ -55,7 +55,7 @@
     {
       "activate": false,
       "balance": "0",
-      "walletName": "USDⓈ-M Futures"
+      "walletName": "USD-M Futures"
     },
     {
       "activate": false,

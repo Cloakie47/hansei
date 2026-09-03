@@ -5,7 +5,7 @@ query-token-audit skill documents) and maps the response to a PASS/FAIL
 verdict. The parser is strict by design:
 
 - riskLevelEnum must be one of the known values. The live API returns "MID"
-  where SKILL.md documents "MEDIUM" — both are mapped. ANY other value
+  where SKILL.md documents "MEDIUM", both are mapped. ANY other value
   raises AuditParseError; an unrecognised level is never passed as safe.
 - riskLevel must be an integer 0-5, else AuditParseError.
 - hasResult/isSupported false -> FAIL (audit unavailable is not a pass).
@@ -77,7 +77,7 @@ def parse_audit(resp):
 
     if not (data.get("hasResult") is True and data.get("isSupported") is True):
         return {"verdict": "FAIL", "level": None, "level_enum": None,
-                "reasons": ["audit unavailable (hasResult/isSupported not true) — treated as FAIL"],
+                "reasons": ["audit unavailable (hasResult/isSupported not true), treated as FAIL"],
                 "flags": []}
 
     raw_enum = data.get("riskLevelEnum")
@@ -106,9 +106,9 @@ def parse_audit(resp):
                 risk_type = det.get("riskType")
                 line = f"{item.get('id')}: {det.get('title')}"
                 if risk_type == "RISK":
-                    reasons.append(f"hit RISK — {line}")
+                    reasons.append(f"hit RISK, {line}")
                 elif risk_type == "CAUTION":
-                    flags.append(f"hit CAUTION — {line}")
+                    flags.append(f"hit CAUTION, {line}")
                 else:
                     raise AuditParseError(f"unknown riskType: {risk_type!r} on hit item {line}")
 
@@ -125,11 +125,11 @@ def audit_token(chain_id, contract_address):
         return parse_audit(fetch_audit(chain_id, contract_address))
     except AuditParseError as e:
         return {"verdict": "FAIL", "level": None, "level_enum": None,
-                "reasons": [f"unparseable audit — treated as FAIL: {e}"], "flags": []}
+                "reasons": [f"unparseable audit, treated as FAIL: {e}"], "flags": []}
 
 
 # ---------------------------------------------------------------------------
-# R008 vetting — two paths. Contract-based assets go through the token audit
+# R008 vetting, two paths. Contract-based assets go through the token audit
 # above; native L1 coins (no contract) are vetted against Binance spot
 # listing data. An asset that fits neither path is DISCARDED, not exempted.
 
@@ -161,11 +161,11 @@ def native_listing_vet(spot_symbol, min_age_days=MIN_LISTING_AGE_DAYS):
         reasons.append("isSpotTradingAllowed false")
     order_types = set(info.get("orderTypes") or [])
     if not {"MARKET", "LIMIT"} <= order_types:
-        reasons.append(f"trading restricted — orderTypes {sorted(order_types)}")
+        reasons.append(f"trading restricted, orderTypes {sorted(order_types)}")
 
     klines = _spot_get("klines", f"symbol={spot_symbol}&interval=1M&limit=1000")
     if not klines:
-        reasons.append("no kline history — cannot establish listing age")
+        reasons.append("no kline history, cannot establish listing age")
         age_days = None
     else:
         import time
@@ -192,7 +192,7 @@ def vet_asset(contract_address=None, chain_id=None, spot_symbol=None):
     if spot_symbol:
         return native_listing_vet(spot_symbol)
     return {"path": "none", "verdict": "FAIL",
-            "reasons": ["no contract and no spot symbol — cannot vet by either path, discarded"],
+            "reasons": ["no contract and no spot symbol, cannot vet by either path, discarded"],
             "detail": "unvettable"}
 
 

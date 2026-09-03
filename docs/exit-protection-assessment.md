@@ -1,7 +1,7 @@
-# Exit-protection assessment — 2026-09-03. ASSESSMENT ONLY, nothing built.
+# Exit-protection assessment, 2026-09-03. ASSESSMENT ONLY, nothing built.
 
 The gap, stated: packets compute a structural target and stop, and those
-numbers GATE the trade (R014) — but nothing is ever placed on the
+numbers GATE the trade (R014), but nothing is ever placed on the
 exchange. Between scans, a position is unprotected; the stop exists on
 paper, not on the book.
 
@@ -9,7 +9,7 @@ paper, not on the book.
 
 YES, mechanically. The hidden write registry reachable through
 tool_execute includes spot.orderListOco (the current endpoint; spot.orderOco
-is deprecated but also present) and spot.deleteOrderList for cancellation —
+is deprecated but also present) and spot.deleteOrderList for cancellation,
 all verified in scripts/tool-inventory.md when the write surface was
 mapped. A long position closes with a SELL OCO: a LIMIT_MAKER/TAKE_PROFIT
 leg at the target above, a STOP_LOSS(_LIMIT) leg at the stop below, same
@@ -19,43 +19,43 @@ quantity both legs, prices obeying limit > last > stop.
 
 Every write through the MCP triggers the platform's Pilot-confirmation, so
 the expected flow at entry is TWO confirmations back-to-back: the entry
-order, then the protective OCO seconds later — acceptable, since the Pilot
+order, then the protective OCO seconds later, acceptable, since the Pilot
 is by definition present at entry (hard constraint 4). CAVEAT, stated: we
 have never executed a tool_execute-wrapped WRITE live; that the hidden
 endpoints prompt identically to spot_newOrder is the platform's documented
 behavior, not something we have observed. It is verifiable only on the
 first live attempt.
 
-## 3. Constraints at our 8 USDT size — measured
+## 3. Constraints at our 8 USDT size, measured
 
 minNotional 5 USDT applies PER LEG. With an 8 USDT entry (minus taker
-fee), the stop leg's notional stays valid down to a stop ~37% below entry
-— measured: 3% stop -> ~7.75 USDT leg, 8% -> ~7.35, 20% -> ~6.39, 38% ->
+fee), the stop leg's notional stays valid down to a stop ~37% below entry,
+measured: 3% stop -> ~7.75 USDT leg, 8% -> ~7.35, 20% -> ~6.39, 38% ->
 4.96 (INVALID). Our structural stops run 2-10% below entry, so an 8 USDT
 position supports a valid OCO with >2 USDT of headroom. Remaining
 mechanics: both prices tick-aligned, quantity lot-aligned AND reduced by
 the fee if paid in the asset (sell executedQty net of fee, rounded DOWN a
-lot step — a classic first-attempt failure), stop legs count against
+lot step, a classic first-attempt failure), stop legs count against
 MAX_NUM_ALGO_ORDERS (5; we would use 1).
 
-## 4. Can PAPER mode prove it? NO — and this is the decisive fact.
+## 4. Can PAPER mode prove it? NO, and this is the decisive fact.
 
 spot.orderTest and spot.sorOrderTest are SINGLE-ORDER validators. There is
 NO test endpoint for the order-list family anywhere in the registry. We
-could individually orderTest each leg (LIMIT sell; STOP_LOSS_LIMIT sell —
+could individually orderTest each leg (LIMIT sell; STOP_LOSS_LIMIT sell,
 both supported types), which validates tick/lot/notional per leg, but the
-OCO-SPECIFIC mechanics — the price relationship, list acceptance, quantity
-locking — can only be validated by placing a REAL order list. Our entire
+OCO-SPECIFIC mechanics, the price relationship, list acceptance, quantity
+locking, can only be validated by placing a REAL order list. Our entire
 safety methodology has been "prove it in PAPER first"; for OCO that
 methodology is unavailable.
 
 ## 5. Interaction with a Pilot-approved manual exit
 
 A resting SELL OCO LOCKS the position's quantity. A manual exit therefore
-requires: cancel the OCO first (spot.deleteOrderList — one write, one
+requires: cancel the OCO first (spot.deleteOrderList, one write, one
 confirmation), then place the market sell (second write, second
 confirmation). Also true and currently unhandled: if the OCO FIRES between
-sessions, the exchange closes the position with nobody logging it —
+sessions, the exchange closes the position with nobody logging it,
 fills.jsonl would not learn of the exit until the next session reconciles
 via spot_getOrder/spot_myTrades. That reconciliation machinery does not
 exist and would be NEW code.
@@ -70,7 +70,7 @@ Buildable safely in the time remaining? NO, and honestly so:
   exchange-initiated fills) when the BASE entry flow itself has never run
   live.
 - Exchange-initiated closes break the current logging model and need a
-  reconciliation subsystem — a real feature, not a patch, under freeze.
+  reconciliation subsystem, a real feature, not a patch, under freeze.
 
 MIDDLE PATH, prepared but not automated: if a live fill happens before the
 deadline, the Pilot can place the OCO manually through printed tool calls

@@ -3,7 +3,7 @@
 The on-chain signal feeds (smart money, market rank) surface microcap
 launchpad tokens that do not exist on Binance spot. We trade an Agentic
 sub-account with spot-only scope, so any signal whose asset is not an
-ACTIVE Binance spot USDT pair is discarded AT INGEST — logged with a
+ACTIVE Binance spot USDT pair is discarded AT INGEST, logged with a
 reason, never surfaced as packet evidence (R005).
 
 Eligibility = <TICKER>USDT exists on Binance spot exchangeInfo, with
@@ -31,7 +31,7 @@ DISCARD_LOG = ROOT / "logs" / "signals_discarded.jsonl"
 EXCHANGE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo?symbol={symbol}"
 
 # R006: canonical contract per (ticker, chainId). A signal's contract must
-# match, or the signal is DISCARDED — fail-closed: no entry here means no
+# match, or the signal is DISCARDED, fail-closed: no entry here means no
 # acceptance, ticker-string matches alone are never sufficient. BSC ("56")
 # entries are the long-established Binance-Peg / issuer contracts.
 CANONICAL_CONTRACTS = {
@@ -106,11 +106,11 @@ def check_canonical(signal, ticker):
     observed = signal_contract(signal)
     if expected is None:
         return False, (f"R006: no canonical contract known for {ticker} on chain "
-                       f"{chain_id} — fail-closed discard"), None
+                       f"{chain_id}, fail-closed discard"), None
     if not observed:
         return False, f"R006: signal has no contract address to verify against canonical", expected
     if observed.lower() != expected.lower():
-        return False, (f"R006: contract mismatch — observed {observed}, "
+        return False, (f"R006: contract mismatch, observed {observed}, "
                        f"canonical {expected}"), expected
     return True, None, expected
 

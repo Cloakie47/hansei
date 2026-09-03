@@ -1,0 +1,15 @@
+━━━ REPLAY PACKET r-mix91-05 ━━━  (DRILL — historical, anonymised, not a live proposal)
+
+PROPOSAL   BUY [stake] USDT of SYM-14 (spot, market)
+CONFIDENCE 62%  (v3, A+B evidence only — C-dependent terms zero, no book history)
+THESIS     SYM-14 moved -6.11% in its trailing 24h (own-volatility threshold 2.8%), 24h volume 1.50x its prior average, sitting at 7% of its 7-day range.
+
+EVIDENCE
+  • [A] cross-sectional -> 24h -6.11% vs threshold 2.8%; volume 1.50x prior avg (8.3m USDT); triggers: ['chg']
+  • [B] time series -> 7% of 7d range; current candle body 0.82x prior 24 avg; triggers: ['range-edge', 'vol-expand']
+  • [C] unavailable in replay (no historical order book)
+
+INVALIDATION
+  Structural stop at 1.40536 (48h swing low); the setup's own reversal conditions apply.
+
+━━━ Pilot: python scripts/replay.py verdict r-mix91-05 y|n [code] ━━━

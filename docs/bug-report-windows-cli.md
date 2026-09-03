@@ -32,7 +32,7 @@ On Windows the two sides never match:
   backslashes: `file://C:\Users\<user>\project\.agents\skills\binance-trading-signal\scripts\cli.mjs`
 
 The guard is false, the dispatch block is skipped, and the process exits 0
-having done nothing. The module code itself is fine — its exported
+having done nothing. The module code itself is fine, its exported
 `COMMANDS`/`call` work when imported.
 
 ## Reproduction

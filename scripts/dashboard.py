@@ -1,4 +1,4 @@
-"""HANSEI static dashboard generator — writes dashboard/index.html.
+"""HANSEI static dashboard generator, writes dashboard/index.html.
 
 Read-only reporting, freeze-safe: no trading logic, no controls, no forms.
 The HTML is fully self-contained (inline CSS, no JS, no external requests)
@@ -44,11 +44,16 @@ def latest_scan_batch():
         return None, []
     last = hist[-1]
     t0 = datetime.strptime(last["ts"], "%Y-%m-%dT%H:%M:%SZ")
-    batch = []
+    # Dedup by symbol, keeping the entry closest to the scan-history row.
+    # If two scans land within the window (a bad take re-scanned under
+    # recording pressure), the funnel must not show a symbol twice.
+    best = {}
     for s in load("logs/setups.jsonl"):
         ts = datetime.strptime(s["ts"], "%Y-%m-%dT%H:%M:%SZ")
-        if abs((ts - t0).total_seconds()) <= 240:
-            batch.append(s)
+        d = abs((ts - t0).total_seconds())
+        if d <= 240 and (s["symbol"] not in best or d < best[s["symbol"]][0]):
+            best[s["symbol"]] = (d, s)
+    batch = [v[1] for v in best.values()]
     return last, batch
 
 
@@ -98,7 +103,7 @@ def bar(width_pct, color, label, value):
 def drill_calibration():
     """Renders in BOTH states: only the decided drills (today), and the same
     plus a discrimination stat once blind-mixed drills (ground truth in the
-    session file) are decided. Never half-built — sections appear only when
+    session file) are decided. Never half-built, sections appear only when
     their data exists."""
     dec = load("logs/replay/decisions.jsonl")
     if not dec:
@@ -144,7 +149,7 @@ def drill_calibration():
     if gt_total:
         hdr += (f"<p class='honest'>Discrimination (blind mixed set): "
                 f"{gt_correct} of {gt_total} verdicts matched what the live "
-                f"gates would do — the drill measures whether the Pilot's blind "
+                f"gates would do, the drill measures whether the Pilot's blind "
                 f"judgment agrees with the system, not just the approval rate.</p>")
     else:
         hdr += ("<p class='honest'>These are all APPROVED so far; a blind mixed "
@@ -155,10 +160,10 @@ def drill_calibration():
             "<th>vs live gates</th></tr>"]
     for r in rows:
         def pc(x):
-            return f"{x:+.2f}%" if isinstance(x, (int, float)) else "—"
+            return f"{x:+.2f}%" if isinstance(x, (int, float)) else ", "
         vlabel = ("blind: system would " +
                   ("REJECT" if r["gt"] == "would-reject" else "PASS")
-                  if r["blind"] else "—")
+                  if r["blind"] else ", ")
         body.append(
             f"<tr><td>{esc(r['rid'])}</td><td>{esc(r['symbol'])}</td>"
             f"<td class='v-{r['verdict']}'>{esc(r['verdict'])}"
@@ -168,7 +173,7 @@ def drill_calibration():
             f"<td class='muted'>{esc(vlabel)}</td></tr>")
     body.append("</table>")
     caveat = ("<p class='muted'>Drills use A+B evidence only (no order book) "
-              "and never touch live Sync Rate — a separate calibration range.</p>")
+              "and never touch live Sync Rate, a separate calibration range.</p>")
     return hdr + "".join(body) + caveat
 
 
@@ -203,21 +208,21 @@ def build():
             if s["blocked"]:
                 continue
             if not s.get("vote_pass") and s.get("vote_failed"):
-                fails.append(f"<li><b>{esc(s['symbol'])}</b> ({esc(s['setup'])}) — vote "
+                fails.append(f"<li><b>{esc(s['symbol'])}</b> ({esc(s['setup'])}), vote "
                              f"{s.get('vote_n_pass')}/{s.get('vote_need')}: failed "
                              f"{esc('; '.join(s['vote_failed']))}</li>")
             elif s.get("rr_refusal"):
-                fails.append(f"<li><b>{esc(s['symbol'])}</b> ({esc(s['setup'])}) — "
+                fails.append(f"<li><b>{esc(s['symbol'])}</b> ({esc(s['setup'])}), "
                              f"{esc(s['rr_refusal'])}</li>")
             elif s.get("rr") is not None and s["rr"] < 2:
-                fails.append(f"<li><b>{esc(s['symbol'])}</b> ({esc(s['setup'])}) — R:R "
+                fails.append(f"<li><b>{esc(s['symbol'])}</b> ({esc(s['setup'])}), R:R "
                              f"{s['rr']} below R014's 2:1</li>")
         chases = [s["symbol"] for s in batch if s["blocked"]]
         if chases:
             fails.append(f"<li class='muted'>{len(chases)} candidates blocked by the "
                          f"setup classifier (CHASE / UNCLASSIFIED): "
                          f"{esc(', '.join(chases))}</li>")
-        fail_html = (f"<h3>Named failures — scan of {esc(last_scan['ts'])}</h3>"
+        fail_html = (f"<h3>Named failures, scan of {esc(last_scan['ts'])}</h3>"
                      f"<ul class='fails'>{''.join(fails)}</ul>") if fails else ""
 
     # --- sync rate ---
@@ -226,7 +231,7 @@ def build():
         f"<div class='big'>{rate} <span class='denom'>({len(approved)} of "
         f"{len(decided)} decided)</span></div>"
         f"<p class='honest'>Honest label: {len(approved)} approvals out of "
-        f"{len(decided)} decided proposals. The number is this empty on purpose — "
+        f"{len(decided)} decided proposals. The number is this empty on purpose, "
         f"a quiet tape producing zero packets is a correct output, and no chart "
         f"here is drawn fuller than the data is.</p>")
 
@@ -236,7 +241,7 @@ def build():
     rules_html = ""
     for r in parsed_rules:
         cls = "rule struck" if r["struck"] else "rule"
-        note = " — struck, superseded" if r["struck"] else ""
+        note = ", struck, superseded" if r["struck"] else ""
         rules_html += (f"<div class='{cls}'><span class='rid'>{r['id']}</span>"
                        f"<span class='rdate'>{esc(dates.get(r['id'], '?'))}{note}</span>"
                        f"<div class='rtext'>{esc(r['text'])}</div></div>")
@@ -248,7 +253,7 @@ def build():
         extra = " (spec-superseded: administrative, excluded from preference inference)" \
             if p.get("spec_superseded") else ""
         dec_html += (f"<tr><td>{esc(p['id'])}</td><td>{esc(p['ts'])}</td>"
-                     f"<td>{esc(p.get('symbol') or '—')}</td>"
+                     f"<td>{esc(p.get('symbol') or ', ')}</td>"
                      f"<td class='v-{p['verdict']}'>{esc(p['verdict'])}</td>"
                      f"<td>{esc(code)}{esc(extra)}</td></tr>")
 
@@ -267,7 +272,7 @@ def build():
         w = (" · " + esc(drift_warns[0])) if drift_warns else " · no drift warning active"
         drift_line = (f"latest day mean {last['mean']:.3f}, median {last['median']:.3f}, "
                       f"{last['near_floor']} within 0.02 of the 60% floor{w} "
-                      f"(monitoring only — gates nothing)")
+                      f"(monitoring only, gates nothing)")
     else:
         drift_line = "no confidence-bearing drafts yet"
 
@@ -315,49 +320,49 @@ def build():
        margin:.3rem 0; font-size:.92rem; }}
   footer {{ color:{MUTED}; font-size:.8rem; margin:2.5rem 0 1rem; }}
 </style></head><body>
-<h1>HANSEI — the honest report card</h1>
+<h1>HANSEI, the honest report card</h1>
 <p class="stamp">Generated <b>{now}</b> · funnel below is scan
-<b>{esc(scan_id)}</b>. Static snapshot from the append-only logs — if these
+<b>{esc(scan_id)}</b>. Static snapshot from the append-only logs, if these
 do not match the scan on screen, regenerate: <code>python scripts/dashboard.py</code></p>
 
 <h2>The claim, proven with timestamps</h2>
 <div class="card">
 <p>The product's claim is that the agent learns the Pilot's judgment. Here is
-that loop executing in one evening — direction of causation provable from git
+that loop executing in one evening, direction of causation provable from git
 history and logs (all times UTC, 2026-09-01):</p>
 <div class="chain">
-<div><b>19:57</b> — the agent generates two packets (FIL +15%, CRV +15%,
+<div><b>19:57</b>, the agent generates two packets (FIL +15%, CRV +15%,
 both near range highs) that pass every gate then in force.</div>
-<div><b>20:05</b> — the Pilot rejects them as momentum chases.
+<div><b>20:05</b>, the Pilot rejects them as momentum chases.
 <b>No setup classifier exists at this moment.</b></div>
-<div><b>20:14</b> — a setup classifier built from that critique is committed
+<div><b>20:14</b>, a setup classifier built from that critique is committed
 (<code>fe0dcf0</code>).</div>
-<div><b>20:25</b> — on its first pass over fresh data the classifier
+<div><b>20:25</b>, on its first pass over fresh data the classifier
 independently labels both packets CHASE and blocks the class permanently.</div>
-<div><b>05:02 (+1)</b> — the Pilot's formal CONVICTION rejections are logged.</div>
+<div><b>05:02 (+1)</b>, the Pilot's formal CONVICTION rejections are logged.</div>
 </div>
 <p class="muted">Human judgment first; the code caught up nine minutes later,
 then agreed, then made the mistake structurally impossible to repeat.</p>
 </div>
 
-<h2>Drill calibration — where the loop completes</h2>
+<h2>Drill calibration, where the loop completes</h2>
 <div class="card">{drill_html}</div>
 
-<h2>The funnel — latest scan</h2>
+<h2>The funnel, latest scan</h2>
 <div class="card">{funnel_html}{fail_html}</div>
 
 <h2>Sync Rate</h2>
 <div class="card">{sync_html}</div>
 
-<h2>The rulebook — every rule traceable, struck rules stay visible</h2>
+<h2>The rulebook, every rule traceable, struck rules stay visible</h2>
 <div class="card">{rules_html}</div>
 
-<h2>Decision log — every decided proposal</h2>
+<h2>Decision log, every decided proposal</h2>
 <div class="card"><table>
 <tr><th>id</th><th>decided (UTC)</th><th>symbol</th><th>verdict</th><th>reason</th></tr>
 {dec_html}</table></div>
 
-<h2>Suppressions by rule — the packets that never were</h2>
+<h2>Suppressions by rule, the packets that never were</h2>
 <div class="card">{sup_html}
 <p class="muted">Every suppression carries its named reason in
 logs/suppressed.jsonl; vote failures name their dimensions in
@@ -365,7 +370,7 @@ logs/setups.jsonl.</p>
 <p class="muted" style="margin-top:.8rem">Confidence drift monitor: {drift_line}.</p></div>
 
 <footer>HANSEI · Binance Agent OS Mini Hackathon · MODE=PAPER · no
-profitability claim — the metric is behaviour change, measured from
+profitability claim, the metric is behaviour change, measured from
 append-only logs.</footer>
 </body></html>"""
     OUT.write_text(page, encoding="utf-8")

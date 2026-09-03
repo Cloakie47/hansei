@@ -1,4 +1,4 @@
-"""HANSEI order placement — PAPER/LIVE routing.
+"""HANSEI order placement, PAPER/LIVE routing.
 
 The Binance MCP tools are only callable from inside the Claude Code session
 (session OAuth); this script cannot reach the network itself. It owns every
@@ -18,7 +18,7 @@ deterministic step and the session performs exactly one MCP call in between:
        -> appends to logs/tool_execute.jsonl whenever the call went through
           tool_execute, with the wrapped toolName (R004)
 
-Routing — the ONLY difference between modes:
+Routing, the ONLY difference between modes:
   MODE=PAPER -> tool_execute wrapping spot.orderTest  (validation only,
                 never reaches the matching engine)
   MODE=LIVE  -> spot_newOrder
@@ -50,7 +50,7 @@ PAPER_SAFE_TOOLS = {"spot.orderTest", "spot.sorOrderTest"}
 
 def assert_paper_safe(call):
     """If MODE is not LIVE, the resolved tool must be a validation-only test
-    order. Anything else is a routing bug — raise and call nothing (R004)."""
+    order. Anything else is a routing bug, raise and call nothing (R004)."""
     if call["mode"] == "LIVE":
         return
     resolved = (call["arguments"].get("toolName")
@@ -83,7 +83,7 @@ MIN_STAKE_USDT = 6.0
 
 def default_stake(usdt_balance):
     """Stake derives from live balance: 20% of balance (R001 ceiling).
-    Refuses when 20% of balance is under the 6 USDT floor — there is no
+    Refuses when 20% of balance is under the 6 USDT floor, there is no
     'small but compliant' size below it."""
     stake = round(R001_MAX_FRACTION * usdt_balance, 2)
     if stake < MIN_STAKE_USDT:
@@ -150,7 +150,7 @@ def resolve_balance(ctx):
     cached snapshot after a deposit (docs/bug-report-stale-getaccount.md).
     Path 2: wallet-summary Spot valuation, ONLY while nothing but USDT is
     held (no non-USDT asset in the account snapshot, no LIVE fill recorded,
-    and the caller attests deposits were USDT-only) — the valuation equals
+    and the caller attests deposits were USDT-only), the valuation equals
     free USDT only under that assumption.
     Otherwise: raise. A trade must never be sized against a guess."""
     if isinstance(ctx, dict) and "spot_account" in ctx:
@@ -167,7 +167,7 @@ def resolve_balance(ctx):
             return {"usdt_free": _wallet_spot_balance(wallet),
                     "path": "wallet_summary(usdt-only)",
                     "detail": (f"spot_getAccount stale (updateTime {update_time} < "
-                               f"flow {known_flow}); wallet Spot valuation trusted — "
+                               f"flow {known_flow}); wallet Spot valuation trusted, "
                                f"no non-USDT holdings, no LIVE fills, deposits USDT-only")}
         raise RuntimeError(
             "cannot establish trustworthy free USDT: spot_getAccount is stale "
@@ -207,13 +207,13 @@ def affordability_check(proposal, account):
         # Closing a position needs no USDT and reduces exposure; the sizing
         # cap does not apply. Distinct status so checkers report it honestly.
         return {"status": "EXIT", "balance_source": "n/a (exit)",
-                "note": "exit reduces exposure — R001 sizing cap not applicable"}
+                "note": "exit reduces exposure, R001 sizing cap not applicable"}
     src = resolve_balance(account)  # raises when no trustworthy figure exists
     balance = src["usdt_free"]
     if balance == 0:
         return {"status": "SKIPPED", "usdt_free": 0.0,
                 "balance_source": src["path"],
-                "note": "balance 0 — R001 not enforceable, orderTest does not check balance"}
+                "note": "balance 0, R001 not enforceable, orderTest does not check balance"}
     notional = proposal_notional_usdt(proposal)
     if notional is None:
         raise RuntimeError(
@@ -303,7 +303,7 @@ def log_fill(proposal, call, response, affordability=None, test=False):
         "response": response,
     }
     if test:
-        entry["test"] = True  # pipeline drill — excluded from all metrics
+        entry["test"] = True  # pipeline drill, excluded from all metrics
     append_jsonl(FILLS_LOG, entry)
     if call["tool"] == "tool_execute":
         append_jsonl(TOOL_EXECUTE_LOG, {
@@ -317,7 +317,7 @@ def log_fill(proposal, call, response, affordability=None, test=False):
 def freshness_check(spot_account, wallet_summary, tolerance=0.01):
     """Startup check: spot_getAccount vs wallet_queryUserWalletBalance
     (quoteAsset=USDT) on USDT. Returns (ok, message); a disagreement gets a
-    loud warning — see docs/bug-report-stale-getaccount.md."""
+    loud warning: see docs/bug-report-stale-getaccount.md."""
     acct_usdt = _account_free_usdt(spot_account)
     wallet_usdt = _wallet_spot_balance(wallet_summary)
     update_time = int(spot_account.get("updateTime") or 0)
@@ -326,7 +326,7 @@ def freshness_check(spot_account, wallet_summary, tolerance=0.01):
                       f"with wallet summary {wallet_usdt} (updateTime {update_time})")
     return False, (
         "\n" + "!" * 72 +
-        f"\n!! BALANCE FRESHNESS WARNING — sources disagree on USDT"
+        f"\n!! BALANCE FRESHNESS WARNING, sources disagree on USDT"
         f"\n!! spot_getAccount free USDT : {acct_usdt} (updateTime {update_time})"
         f"\n!! wallet summary Spot USDT  : {wallet_usdt}"
         f"\n!! spot_getAccount is likely serving a stale snapshot"

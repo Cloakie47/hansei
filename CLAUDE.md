@@ -1,6 +1,6 @@
 # HANSEI
 
-反省 — the practice of reflecting on what you did wrong, even when you succeeded.
+反省: the practice of reflecting on what you did wrong, even when you succeeded.
 
 ## What this is
 
@@ -8,7 +8,7 @@ An AI trading analyst that runs on Binance Agent OS. It does not trade on its ow
 It **proposes** trades to a human, learns from every rejection, and publishes an
 honest report card every night.
 
-Holding horizon, fixed 2026-09-03: a short-swing system — entries on daily
+Holding horizon, fixed 2026-09-03: a short-swing system, entries on daily
 structure, positions held hours to three days, 72-hour hard stop, every
 entry and exit individually approved by a human. Never describe it as
 intraday, real-time, or automatic.
@@ -21,7 +21,7 @@ Track B (connect your MCPs and trade).
 > An AI trading analyst that proposes trades for you to approve, learns from every
 > rejection, and publishes its own honest report card to Binance Square every night.
 
-## Vocabulary (use this everywhere — UI, logs, README, demo)
+## Vocabulary (use this everywhere, UI, logs, README, demo)
 
 | Term | Meaning |
 |---|---|
@@ -29,9 +29,9 @@ Track B (connect your MCPs and trade).
 | **Unit** | The agent. Cannot act without the Pilot. |
 | **Sync Rate** | Approval rate = approved proposals / total proposals. The headline metric. |
 | **Debrief** | The nightly self-review. |
-| **Rulebook** | `rulebook.md` — lessons the Unit has learned. Grows over time. |
+| **Rulebook** | `rulebook.md`, lessons the Unit has learned. Grows over time. |
 
-## Hard constraints — do not design around these, design WITH them
+## Hard constraints, do not design around these, design WITH them
 
 1. **Every trade and transfer requires the Pilot's confirmation.** This is enforced
    by Binance, not by us. The Unit can never execute autonomously. This is a
@@ -62,14 +62,14 @@ claude mcp add binance-mcp-server --transport http https://agent.binance.com/mcp
 
 Skills (install with `npx skills add <url>`; status as of 2026-09-02):
 
-- `binance-trading-signal` — INSTALLED; smart-money mode works (public API),
+- `binance-trading-signal`, INSTALLED; smart-money mode works (public API),
   strategy mode needs the baw wallet CLI (not set up, stretch only)
-- `query-token-audit` — INSTALLED; strict fail-loud parser in scripts/audit.py
-- `crypto-market-rank` — INSTALLED; all seven feeds tested (on-chain universe,
+- `query-token-audit`, INSTALLED; strict fail-loud parser in scripts/audit.py
+- `crypto-market-rank`, INSTALLED; all seven feeds tested (on-chain universe,
   demoted to optional context by R005-R007)
-- `square-post` — INSTALLED; posting blocked on a Square OpenAPI key
-- `binance-leaderboard` — NOT installed (no proven use yet)
-- `binance-agentic-wallet` — NOT installed; x402 stretch goal only
+- `square-post`, INSTALLED; posting blocked on a Square OpenAPI key
+- `binance-leaderboard`, NOT installed (no proven use yet)
+- `binance-agentic-wallet`, NOT installed; x402 stretch goal only
 - Note: on Windows the skill CLIs need scripts/skillcall.mjs
   (docs/bug-report-windows-cli.md)
 
@@ -80,8 +80,8 @@ Skills (install with `npx skills add <url>`; status as of 2026-09-02):
   runs, not a scheduled job.
 - Market scanning reads public api.binance.com endpoints directly for
   payload-size reasons (the full-ticker response is 1.5MB and a scan is ~30
-  calls); all authenticated actions — account state, order validation, order
-  placement — go through the Binance MCP server. This line belongs in the
+  calls); all authenticated actions, account state, order validation, order
+  placement, go through the Binance MCP server. This line belongs in the
   README too. State it plainly, do not bury it.
 - Fee baseline for Debrief fee-drag calculations: 0.1% maker, 0.1% taker,
   25% BNB discount available (verified via spot.orderTest with
@@ -131,7 +131,7 @@ hansei/
     skillcall.mjs        <- Windows-safe runner for skill CLIs
 ```
 
-## Data schemas — never change these once logging starts
+## Data schemas, never change these once logging starts
 
 `logs/proposals.jsonl`, one JSON object per line:
 
@@ -154,7 +154,7 @@ hansei/
 }
 ```
 
-Any log entry with `"test": true` is a synthetic pipeline test — no decision
+Any log entry with `"test": true` is a synthetic pipeline test, no decision
 packet, no Pilot verdict. It is excluded from Sync Rate and ALL Debrief metrics.
 
 `rulebook.md` entries are numbered `R001`, `R002`, ... and never renumbered.
@@ -174,12 +174,12 @@ Deleted rules are struck through, not removed, so the history stays readable.
   invalidation conditions. The Pilot decides.
 - ALL reports, summaries, test results and status output must be PLAIN TEXT.
   No tables. No box-drawing characters. No unicode borders. One fact per line
-  in the form "LABEL: RESULT — detail". Terminal tables get truncated and
+  in the form "LABEL: RESULT, detail". Terminal tables get truncated and
   become unreadable when pasted.
 - **Pilot signal vs advisor directives.** Only entries in logs/proposals.jsonl
   with an actual verdict logged by the Pilot count as Pilot signal for Debrief
-  Step 4. Rule changes and design directives — including those originating
-  from the Pilot's AI advisor — are NOT Pilot verdicts and must never be
+  Step 4. Rule changes and design directives, including those originating
+  from the Pilot's AI advisor, are NOT Pilot verdicts and must never be
   inferred as trading preferences.
 
 ## Standing authority (granted by the Pilot, 2026-09-02)
@@ -208,7 +208,7 @@ REQUIRES PILOT APPROVAL, always:
 - Spending real funds in any way other than an approved packet
 
 NEVER, regardless:
-- Deciding a packet verdict. Verdicts are the Pilot's alone — Sync Rate
+- Deciding a packet verdict. Verdicts are the Pilot's alone, Sync Rate
   measures the agent learning the PILOT's judgment, and an agent-supplied
   verdict would make the metric meaningless.
 - Manufacturing proposals to fill the chart. A quiet tape producing zero
@@ -233,10 +233,10 @@ only, logged in logs/autonomous-changes.jsonl as always.
 3. [x] Approve/reject capture with reason codes
 4. [~] Nightly Debrief runs (first: debriefs/2026-09-01.md); rulebook diffs
        proposed through the Pilot
-5. [ ] Square post publishing — blocked on a Square OpenAPI key (dry run done)
+5. [ ] Square post publishing, blocked on a Square OpenAPI key (dry run done)
 6. [x] Sync Rate chart + dashboard (scripts/chart.py)
-7. [x] Replay mode v1 (scripts/replay.py — anonymised, outcome reveal)
-8. [ ] Stretch: x402 paywall on the full Debrief (Base, USDC) — cut if behind
+7. [x] Replay mode v1 (scripts/replay.py, anonymised, outcome reveal)
+8. [ ] Stretch: x402 paywall on the full Debrief (Base, USDC), cut if behind
 
 ## What we claim, and what we don't
 

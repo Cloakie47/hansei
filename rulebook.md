@@ -5,7 +5,7 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
 - ~~**R002** Run query-token-audit before proposing anything outside the top 20
   pairs.~~ Superseded by R008.
 - **R003** Do not re-propose an idea rejected in the last 24h unless something
-  material changed — and state what changed.
+  material changed, and state what changed.
 - **R004** Any restriction on a tool must also cover tool_execute invoked with
   that tool name as an argument. The visible tool list understates the write
   surface.
@@ -43,27 +43,27 @@ Rules are numbered permanently. Deleted rules are struck through, never removed.
   the Unit proposes an exit packet at the next scan; the Pilot decides it
   like any other proposal.
   (R012 and R013 wording drafted by the Unit, Pilot-approved as drafted
-  2026-09-02 — kept because the exit stays behind the same approval gate.)
+  2026-09-02, kept because the exit stays behind the same approval gate.)
 - **R014** No packet may be generated with a reward-to-risk ratio below 2:1.
-  Target and stop are derived from market structure — recent swing highs and
-  lows — never from fixed percentages. A candidate that cannot produce a
+  Target and stop are derived from market structure, recent swing highs and
+  lows, never from fixed percentages. A candidate that cannot produce a
   structural target and stop is blocked, not estimated.
 - **R017** When BTC is down 3% or more on the day, every BUY entry draft
   takes a flat -0.04 confidence penalty before the R009 floor. Exit packets
-  are exempt — closing into weakness is never obstructed. (The hard block
+  are exempt, closing into weakness is never obstructed. (The hard block
   on entries during a confirmed BTC downtrend is approved in principle,
-  DEFERRED on throughput — recorded in docs/proposed-rules.md.)
+  DEFERRED on throughput, recorded in docs/proposed-rules.md.)
 - **R016** Pairs whose RAW average daily move exceeds 12% are excluded from
   the scan universe. A 12%-daily asset routinely travels ±20% inside the
-  R013 72h hold — structural stops are meaningless at that amplitude and
+  R013 72h hold, structural stops are meaningless at that amplitude and
   the pair is not swing-tradeable on our clock. Every exclusion is logged
   so the boundary stays visible. (12% = 1.5x the 8% threshold-scaling cap,
   keeping the capped-but-included band observable.)
-- **R015** A packet requires its setup's indicator checklist to pass — 3 of 4
-  for PULLBACK and BREAKOUT, 4 of 4 for BASING and REVERSAL — drawn from five
+- **R015** A packet requires its setup's indicator checklist to pass, 3 of 4
+  for PULLBACK and BREAKOUT, 4 of 4 for BASING and REVERSAL, drawn from five
   dimensions verified pairwise-independent (all r < 0.7, measured on a
   341-sample panel; LOCATION is the weakest at r 0.53-0.59 against three
   others and is kept at full weight by Pilot decision, recorded for future
   reviewers). The checklist renders on the packet; failures are logged with
-  the failing dimensions named. Exit packets are exempt — the vote qualifies
+  the failing dimensions named. Exit packets are exempt, the vote qualifies
   an entry setup, and an exit has none.

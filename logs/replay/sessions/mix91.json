@@ -1,0 +1,119 @@
+{
+  "sid": "mix91",
+  "seed": 91,
+  "spec": "classifier-v3-mixed",
+  "windows": [
+    12,
+    16,
+    20,
+    26,
+    31,
+    36,
+    42,
+    48,
+    55,
+    62
+  ],
+  "packets": {
+    "r-mix91-01": {
+      "alias": "SYM-05",
+      "confidence": 0.57,
+      "setup": "CHASE",
+      "rr": null,
+      "ground_truth": "would-reject",
+      "live_verdict": "live system BLOCKS: CHASE",
+      "outcome": {
+        "chg_6h_pct": 1.5693659761456535,
+        "chg_24h_pct": 0.439422473320783,
+        "max_gain_pct": 3.8606403013182744,
+        "max_drawdown_pct": -0.5335844318895111
+      }
+    },
+    "r-mix91-02": {
+      "alias": "SYM-01",
+      "confidence": 0.662,
+      "setup": "PULLBACK",
+      "rr": 2.93,
+      "ground_truth": "would-pass",
+      "live_verdict": "would_pass_all_gates",
+      "outcome": {
+        "chg_6h_pct": -5.1559516231699405,
+        "chg_24h_pct": 6.8746021642266175,
+        "max_gain_pct": 8.27498408656908,
+        "max_drawdown_pct": -5.9834500318268535
+      }
+    },
+    "r-mix91-03": {
+      "alias": "SYM-08",
+      "confidence": 0.589,
+      "setup": "REVERSAL",
+      "rr": null,
+      "ground_truth": "would-reject",
+      "live_verdict": "live system BLOCKS: REVERSAL, vote 1/4",
+      "outcome": {
+        "chg_6h_pct": 5.246913580246915,
+        "chg_24h_pct": 3.395061728395077,
+        "max_gain_pct": 9.259259259259277,
+        "max_drawdown_pct": 0.30864197530864335
+      }
+    },
+    "r-mix91-04": {
+      "alias": "SYM-19",
+      "confidence": 0.589,
+      "setup": "PULLBACK",
+      "rr": 1.11,
+      "ground_truth": "would-reject",
+      "live_verdict": "live system BLOCKS: PULLBACK, vote 2/3",
+      "outcome": {
+        "chg_6h_pct": -0.29612823360610774,
+        "chg_24h_pct": 0.7591278771496235,
+        "max_gain_pct": 1.4207539582342665,
+        "max_drawdown_pct": -1.4939511870410538
+      }
+    },
+    "r-mix91-05": {
+      "alias": "SYM-14",
+      "confidence": 0.618,
+      "setup": "REVERSAL",
+      "rr": 2.86,
+      "ground_truth": "would-reject",
+      "live_verdict": "live system BLOCKS: REVERSAL, vote 2/4",
+      "outcome": {
+        "chg_6h_pct": 0.4898530440867743,
+        "chg_24h_pct": 2.309307207837641,
+        "max_gain_pct": 3.4989503149055246,
+        "max_drawdown_pct": -0.9097270818754444
+      }
+    },
+    "r-mix91-06": {
+      "alias": "SYM-04",
+      "confidence": 0.57,
+      "setup": "CHASE",
+      "rr": null,
+      "ground_truth": "would-reject",
+      "live_verdict": "live system BLOCKS: CHASE",
+      "outcome": {
+        "chg_6h_pct": -15.802623360399748,
+        "chg_24h_pct": -25.952529668956902,
+        "max_gain_pct": 14.928169893816378,
+        "max_drawdown_pct": -30.88694565896315
+      }
+    }
+  },
+  "mapping": {
+    "r-mix91-01": "UNIUSDT",
+    "r-mix91-02": "BMTUSDT",
+    "r-mix91-03": "TUSDT",
+    "r-mix91-04": "BTCUSDT",
+    "r-mix91-05": "TRUMPUSDT",
+    "r-mix91-06": "TRUMPUSDT"
+  },
+  "t_by_rid": {
+    "r-mix91-01": 1783054800000,
+    "r-mix91-02": 1786683600000,
+    "r-mix91-03": 1785733200000,
+    "r-mix91-04": 1784264400000,
+    "r-mix91-05": 1785301200000,
+    "r-mix91-06": 1787374800000
+  }
+}

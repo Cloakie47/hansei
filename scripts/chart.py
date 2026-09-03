@@ -1,4 +1,4 @@
-"""HANSEI dashboard chart — dashboard/sync-rate.png from the logs.
+"""HANSEI dashboard chart, dashboard/sync-rate.png from the logs.
 
 Four panels, all excluding "test": true entries:
   1. Sync Rate over time (approved / all decided), denominator labelled at
@@ -6,7 +6,7 @@ Four panels, all excluding "test": true entries:
   2. Rulebook growth: active rule count per day (derived from git history of
      rulebook.md), struck rules marked.
   3. Suppressions per day from suppressed.jsonl, split R009 vs R010.
-  4. Confidence distribution: suppressed vs surviving drafts — the R009
+  4. Confidence distribution: suppressed vs surviving drafts, the R009
      clustering check. Clustering just above 60% shows up here.
 
 Honesty rule: when n is too small to support a trend, the axes render with a
@@ -83,7 +83,7 @@ def main():
                for p in sorted((ROOT / "logs" / "pending").glob("p-*.json"))]
 
     fig, axes = plt.subplots(2, 2, figsize=(12.5, 8.5), facecolor="white")
-    fig.suptitle("HANSEI — Sync Rate & rule discipline", fontsize=15,
+    fig.suptitle("HANSEI, Sync Rate & rule discipline", fontsize=15,
                  fontweight="bold", color=INK, x=0.06, ha="left")
     for ax in axes.flat:
         ax.set_facecolor("white")
@@ -95,7 +95,7 @@ def main():
             ax.spines[side].set_color(GRID)
         ax.tick_params(colors=MUTED, labelsize=9)
 
-    # Panel 1 — Sync Rate
+    # Panel 1, Sync Rate
     ax = axes[0][0]
     ax.set_title("Sync Rate (approved / all decided)", color=INK, fontsize=11, loc="left")
     sr = sync_rate_by_day(proposals)
@@ -111,7 +111,7 @@ def main():
             ax.annotate(f"{rate:.0f}%  ({v['approved']} of {v['decided']})",
                         (d, rate), textcoords="offset points", xytext=(10, 8),
                         color=INK, fontsize=10)
-        ax.text(0.5, 0.62, f"{len(days)} day of decided proposals —\ntoo few points to draw a trend",
+        ax.text(0.5, 0.62, f"{len(days)} day of decided proposals,\ntoo few points to draw a trend",
                 transform=ax.transAxes, ha="center", color=MUTED, fontsize=10)
     else:
         xs, ys = days, [100 * sr[d]["approved"] / sr[d]["decided"] for d in days]
@@ -121,7 +121,7 @@ def main():
             ax.annotate(f"{y:.0f}% ({v['approved']} of {v['decided']})", (x, y),
                         textcoords="offset points", xytext=(6, 8), color=INK, fontsize=9)
 
-    # Panel 2 — Rulebook growth
+    # Panel 2, Rulebook growth
     ax = axes[0][1]
     ax.set_title("Rulebook: active rules (× = struck, cumulative)", color=INK,
                  fontsize=11, loc="left")
@@ -139,7 +139,7 @@ def main():
                         xytext=(8, -16), color=ORANGE, fontsize=9)
     ax.set_ylim(0, max(active) + 2)
 
-    # Panel 3 — Suppressions per day
+    # Panel 3, Suppressions per day
     ax = axes[1][0]
     ax.set_title("Suppressions per day (R009 floor vs R010 dupe)", color=INK,
                  fontsize=11, loc="left")
@@ -169,7 +169,7 @@ def main():
         ax.legend(frameon=False, fontsize=9, labelcolor=INK)
         ax.set_ylim(0, max(r9 + r10) + 1.5)
 
-    # Panel 4 — Confidence distribution (R009 clustering check)
+    # Panel 4, Confidence distribution (R009 clustering check)
     ax = axes[1][1]
     ax.set_title("Draft confidence: suppressed vs surviving (clustering check)",
                  color=INK, fontsize=11, loc="left")
@@ -195,7 +195,7 @@ def main():
     ax.set_xlabel("draft confidence", color=MUTED)
     ax.legend(frameon=False, fontsize=9, labelcolor=INK, loc="lower left")
     n = len(sup_conf) + len(surv_conf)
-    lines = [f"n={n} drafts over {len(set(day_of(s) for s in suppressed)) or 1} day(s) — "
+    lines = [f"n={n} drafts over {len(set(day_of(s) for s in suppressed)) or 1} day(s), "
              "distribution, not a trend. Watch for clustering just above the floor."]
     if any(c < 0.60 for c in surv_conf):
         lines.append("2 surviving drafts at 54-55% predate R009 (p-005/p-006, "

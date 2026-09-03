@@ -9,7 +9,7 @@ session, 2026-09-01 (~17:00 UTC).
 ## Symptom
 
 The tool returns a bare success envelope with no report payload for every
-token tested — including `BTC`, the example in the tool's own schema
+token tested, including `BTC`, the example in the tool's own schema
 documentation.
 
 ## Exact calls and responses
@@ -35,5 +35,5 @@ token metadata, and content modules) for the given token."
 
 ## Observed
 
-No `data` field, no report metadata, no content modules — only
+No `data` field, no report metadata, no content modules, only
 `{"code":"000000","success":true}`, identical for every token.
