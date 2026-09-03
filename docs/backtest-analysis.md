@@ -98,3 +98,24 @@ Does NOT support: any claim of profitability, any claim the gates beat
 random or BTC, any claim that v3's score is better calibrated than v2's.
 The sample is too small on the packet side to conclude anything about edge,
 and the up-tape inflates every long-side number. Read accordingly.
+
+## Decision record: five loosening options tested, none shipped (2026-09-03)
+
+The Pilot asked whether lowering a gate would get the system to roughly one
+packet a day without outcomes falling below a random entry. Five options
+were tested over the 16 windows, changing one thing at a time:
+  a. R009 floor 58%   b. R009 floor 55%   c. R009 floor 52%
+  d. vote 2 of 4 for PULLBACK/BREAKOUT   e. volume floor 10m.
+
+Result: none reached one packet a day (best was 0.12/day), and the packets
+that existed averaged -0.32% at 24h versus a random qualifying pair at
++0.91%, so loosening toward them degrades quality. The funnel showed why:
+of 52 classified candidates the vote kills 40 and R014 (structural 2:1)
+kills 10 of the remaining 12, so R009 is not the bottleneck, R014 is, and
+the marginal candidates near it are below random. Lowering the floor from
+0.60 to 0.52 added zero packets.
+
+DECISION: shipped none of the five. The floor was the wrong lever, and the
+evidence said loosening would add below-random packets. Changed nothing.
+This is recorded so the record shows we tested the obvious knobs and
+declined them on data, not on inertia.
