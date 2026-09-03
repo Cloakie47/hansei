@@ -24,6 +24,18 @@ catching up, then agreeing. That ordering is in the git history."
 SHOW: terminal, `python scripts/run.py scan` running live. Let the output
 land; zoom on the VOTE FAILED lines and the R009/R014 suppression lines.
 
+STALENESS GUARD — do this on camera or in the cut, do NOT skip: the
+dashboard's funnel is a snapshot of ONE scan. If you show a scan here and
+then open a dashboard built from an earlier scan, the numbers mismatch and
+a judge could catch it. So, in order, every time:
+  1. python scripts/run.py scan          (Beat 2, on screen)
+  2. python scripts/dashboard.py          (regenerate — ~1 second, inlines
+                                           this scan's funnel + the stamp)
+  3. open dashboard/index.html            (Beat 3+)
+The dashboard's orange stamp bar prints the generation time and the scan id
+it is showing; glance at it before filming the dashboard — if it names a
+different scan than the terminal, run step 2 again.
+
 SAY: "This is a live scan. Twenty-five pairs pass the volume floor,
 sixteen get deep analysis, four classify as setups — and zero become
 proposals. Watch WHY: every failure is named by dimension. This pullback
