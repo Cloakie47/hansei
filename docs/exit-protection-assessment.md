@@ -85,3 +85,38 @@ proposes the exit at the next scan) and by the Pilot's presence, not by a
 resting order. On a gap down between scans, the stop is advisory. That is
 the truthful trade-off of confirm-before-execute custody with no
 unattended execution path.
+
+## Reconsideration, 2026-09-03 (leg-testing evidence)
+
+The Pilot reconsidered on capital-loss grounds. New EVIDENCE, gathered by
+leg-testing each OCO side through spot.orderTest (read-only, never reaches
+the engine), on BNBUSDT at market 697.90:
+
+- SELL LIMIT_MAKER qty 0.011 @ 728 (above market): PASS ({}).
+- SELL STOP_LOSS_LIMIT qty 0.011 stop 668 / limit 666: PASS ({}).
+- SELL STOP_LOSS_LIMIT qty 0.005 (notional ~3.3): REJECTED, -1013 NOTIONAL.
+- SELL LIMIT_MAKER qty 0.011 @ 690 (BELOW market, would cross): PASS ({}).
+
+So leg-testing DOES validate per-leg tick size, lot size, minNotional and
+order type. It does NOT catch a LIMIT_MAKER priced on the wrong side of the
+market (the last test passed orderTest but the live engine rejects it -2010),
+does NOT validate the OCO price ordering (limit > last > stop), does NOT
+validate list acceptance/quantity-locking, and does NOT check the
+fee-adjusted sellable quantity (orderTest ignores balance). Correction to
+the earlier assessment: it said OCO "cannot be proven in paper mode" full
+stop; that was too absolute. The LEGS can be paper-validated, which removes
+the most frequent first-attempt rejection class. The LIST semantics and the
+balance/quantity correctness cannot.
+
+Capital-at-risk framing: this is a spot long, no leverage, on a 40 USDT
+demo account with an 8 USDT position and no withdrawal scope. The absolute
+maximum a botched OCO or an unprotected gap can cost is the position value,
+about 8 USDT, and realistically a fraction of it. The risk being managed is
+single-digit dollars, and today there is no live position to protect (MODE
+PAPER, zero packets all week).
+
+Recommendation unchanged: do NOT build automatic OCO before the deadline.
+Use the manual runbook (docs/oco-manual-runbook.md), now strengthened by the
+leg-test-first step proven above, IF a live fill happens. Automation's
+expensive, risky part is the exchange-initiated-fill reconciliation
+subsystem, which a single supervised position does not need.
