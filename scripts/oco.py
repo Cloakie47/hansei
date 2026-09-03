@@ -150,10 +150,13 @@ def cmd_prepare(argv):
 def cmd_record(argv):
     draft = json.loads(Path(argv[0]).read_text(encoding="utf-8"))
     resp = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
+    rr = draft.get("rr") or {}
+    reports = resp.get("orderReports") or []
+    qty = float(reports[0]["origQty"]) if reports and reports[0].get("origQty") else None
     entry = {"ts": now_iso(), "kind": "resting-oco", "symbol": draft["symbol"],
              "client_id": f"{draft.get('id', 'oco')}-oco",
-             "target": (draft.get("rr") or {}).get("target"),
-             "stop": (draft.get("rr") or {}).get("stop"),
+             "target": rr.get("target"), "stop": rr.get("stop"),
+             "entry_price": rr.get("entry"), "qty": qty,
              "order_list_id": resp.get("orderListId"), "response": resp}
     with open(RESTING_LOG, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, separators=(",", ": "), ensure_ascii=False) + "\n")
@@ -175,9 +178,176 @@ def open_oco_for(symbol):
             continue
         if e.get("kind") == "resting-oco":
             live = e
-        elif e.get("kind") == "oco-cancelled":
-            live = None
+        elif e.get("kind") in ("oco-cancelled", "oco-reconciled"):
+            # a cancel or a completed reconciliation closes the open OCO;
+            # a PARTIAL reconciliation leaves it open (remainder still rests)
+            if e.get("status") != "partial":
+                live = None
     return live
+
+
+FILLS_LOG = ROOT / "logs" / "fills.jsonl"
+
+
+def _iso_ms(iso):
+    return int(datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ")
+               .replace(tzinfo=timezone.utc).timestamp() * 1000)
+
+
+def _ms_iso(ms):
+    return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def all_open_ocos():
+    """Every resting OCO not since cancelled or fully reconciled."""
+    return [o for o in _all_resting() if _still_open(o)]
+
+
+def _all_resting():
+    if not RESTING_LOG.exists():
+        return []
+    out = []
+    for line in RESTING_LOG.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            out.append(json.loads(line))
+    return out
+
+
+def _still_open(oco):
+    if oco.get("kind") != "resting-oco":
+        return False
+    for e in _all_resting():
+        if (e.get("client_id") == oco.get("client_id")
+                and e.get("kind") in ("oco-cancelled", "oco-reconciled")
+                and e.get("status") != "partial"):
+            return False
+    return True
+
+
+def reconcile_oco(oco, open_orders, my_trades):
+    """Classify a resting OCO from exchange data. Pure function: the session
+    fetches spot_getOpenOrders and spot_myTrades and passes them in. Returns
+    a dict with status in {still_resting, cancelled_external, closed, partial}
+    and, when a leg filled, the real price/qty/fee/ts and P&L vs entry."""
+    sym, target, stop = oco["symbol"], oco["target"], oco["stop"]
+    qty, entry = oco.get("qty"), oco.get("entry_price")
+    place_ms = _iso_ms(oco["ts"])
+
+    def near(p, ref):
+        return ref and abs(p - ref) / ref < 0.01
+
+    legs_open = [o for o in (open_orders or []) if o.get("symbol") == sym and (
+        o.get("listClientOrderId") == oco["client_id"]
+        or (o.get("clientOrderId") or "").startswith(oco["client_id"])
+        or near(float(o.get("price") or 0), target)
+        or near(float(o.get("stopPrice") or 0), stop))]
+
+    sells = [t for t in (my_trades or [])
+             if t.get("symbol") == sym
+             and ((t.get("isBuyer") is False) or (t.get("side") == "SELL"))
+             and int(t.get("time", place_ms)) >= place_ms - 2000]
+    total = round(sum(float(t["qty"]) for t in sells), 8)
+
+    if total <= 1e-9:
+        return {"status": "still_resting" if legs_open else "cancelled_external",
+                "symbol": sym, "filled_qty": 0, "legs_open": len(legs_open)}
+
+    avgp = sum(float(t["qty"]) * float(t["price"]) for t in sells) / total
+    leg = "target" if abs(avgp - target) <= abs(avgp - stop) else "stop"
+    fee = round(sum(float(t.get("commission", 0)) for t in sells), 10)
+    fee_asset = sells[-1].get("commissionAsset")
+    ts = _ms_iso(max(int(t.get("time", place_ms)) for t in sells))
+    is_partial = qty is not None and total < qty * 0.999
+    pnl_pct = ((avgp - entry) / entry * 100) if entry else None
+    pnl_usdt = ((avgp - entry) * total) if entry else None
+    return {"status": "partial" if is_partial else "closed", "leg": leg,
+            "symbol": sym, "filled_qty": total, "avg_price": round(avgp, 8),
+            "fee": fee, "fee_asset": fee_asset, "ts": ts,
+            "residual": round((qty - total), 8) if (qty and is_partial) else 0,
+            "pnl_pct": round(pnl_pct, 3) if pnl_pct is not None else None,
+            "pnl_usdt": round(pnl_usdt, 4) if pnl_usdt is not None else None}
+
+
+def _append_reconciled_fill(oco, r):
+    """APPEND a reconciled close to fills.jsonl. Never edits. Flagged
+    reconciled:true so the record shows the exchange acted and we discovered
+    it after the fact, not a Pilot-approved order."""
+    entry = {"id": f"{oco['client_id']}-{r['leg']}-fill", "ts": r["ts"],
+             "mode": "LIVE", "reconciled": True, "kind": "oco-reconciled-exit",
+             "symbol": r["symbol"], "side": "SELL", "leg": r["leg"],
+             "response": {"executedQty": f"{r['filled_qty']:.8f}",
+                          "price": r["avg_price"], "commission": r["fee"],
+                          "commissionAsset": r.get("fee_asset")},
+             "pnl_pct": r["pnl_pct"], "pnl_usdt": r["pnl_usdt"],
+             "note": "exchange-initiated OCO fill, reconciled at session start"}
+    with open(FILLS_LOG, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, separators=(",", ": "), ensure_ascii=False) + "\n")
+
+
+def _log_reconciled(oco, r):
+    with open(RESTING_LOG, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"ts": now_iso(), "kind": "oco-reconciled",
+                            "symbol": oco["symbol"], "client_id": oco["client_id"],
+                            "status": r["status"], "leg": r.get("leg"),
+                            "filled_qty": r.get("filled_qty"),
+                            "residual": r.get("residual", 0)},
+                           separators=(",", ": ")) + "\n")
+
+
+def _report(oco, r):
+    sym = oco["symbol"]
+    bar = "!" * 64
+    if r["status"] == "still_resting":
+        print(f"  {sym}: OCO still resting ({r['legs_open']} legs open), no action.")
+        return
+    if r["status"] == "cancelled_external":
+        print("\n" + bar)
+        print(f"!! {sym}: resting OCO was CANCELLED externally, no leg filled.")
+        print(f"!! The position is UNPROTECTED. Decide an exit or re-place the OCO.")
+        print(bar)
+        return
+    pnl = (f"{r['pnl_pct']:+.2f}% ({r['pnl_usdt']:+.4f} USDT)"
+           if r["pnl_pct"] is not None else "P&L unavailable (no entry price)")
+    print("\n" + bar)
+    print(f"!! {sym}: OCO {r['leg'].upper()} LEG FIRED between sessions.")
+    print(f"!! sold {r['filled_qty']} at {r['avg_price']} on {r['ts']}")
+    print(f"!! REALISED P&L: {pnl}   <-- first real P&L on the record")
+    if r["status"] == "partial":
+        print(f"!! PARTIAL: {r['residual']} still held; the remainder OCO may still "
+              f"rest. Reported, not guessed, verify open orders.")
+    print(bar)
+
+
+def cmd_reconcile_prepare(argv):
+    ocos = all_open_ocos()
+    if not ocos:
+        print("no open resting OCOs, nothing to reconcile.")
+        return 0
+    print("RECONCILIATION NEEDED, for each open resting OCO fetch and save:")
+    for o in ocos:
+        s = o["symbol"]
+        print(f"\n  {s} ({o['client_id']}):")
+        print(f"    spot_getOpenOrders  arguments: {{\"symbol\": \"{s}\"}}   -> open_{s}.json")
+        print(f"    spot_myTrades       arguments: {{\"symbol\": \"{s}\", \"limit\": 20}} -> trades_{s}.json")
+        print(f"    then: python scripts/oco.py reconcile {s} open_{s}.json trades_{s}.json")
+    return 0
+
+
+def cmd_reconcile(argv):
+    sym = argv[0].upper()
+    open_orders = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
+    my_trades = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
+    oco = open_oco_for(sym)
+    if not oco:
+        print(f"no open resting OCO logged for {sym}.")
+        return 0
+    r = reconcile_oco(oco, open_orders, my_trades)
+    if r["status"] in ("closed", "partial"):
+        _append_reconciled_fill(oco, r)
+    if r["status"] != "still_resting":
+        _log_reconciled(oco, r)
+    _report(oco, r)
+    return 0
 
 
 def cmd_cancel(argv):
@@ -226,6 +396,10 @@ def main(argv):
         return cmd_prepare(argv[2:])
     if cmd == "record":
         return cmd_record(argv[2:])
+    if cmd == "reconcile-prepare":
+        return cmd_reconcile_prepare(argv[2:])
+    if cmd == "reconcile":
+        return cmd_reconcile(argv[2:])
     if cmd == "cancel":
         return cmd_cancel(argv[2:])
     if cmd == "record-cancel":

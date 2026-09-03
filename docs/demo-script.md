@@ -73,6 +73,20 @@ otherwise. Approving a packet used to delete the very draft needed to
 place it. Every one is in the nightly debrief, published, unedited.
 Believed-fixed is not a state. The record is."
 
+## Optional beat, resting protective exit (if time allows)
+
+SHOW: scripts/oco.py output, the leg-test calls and the emitted OCO call;
+then the reconciliation report from a synthetic fired stop.
+
+SAY: "When a trade is approved, the system also places a real stop and
+target on the exchange, so the position is protected between sessions.
+Binance hides these order-list tools and its own examples skip them, so a
+naive agent leaves positions unguarded. If a stop fires while nobody is
+watching, the next scan reconciles it, appends the real close to the audit
+log flagged as reconciled, never editing history, and reports the realised
+profit or loss. That is the first real money the system moves, and it is
+logged honestly whether it wins or loses."
+
 ## Closing card (1:30)
 
 SHOW: repo URL + the line "Zero approvals so far. Zero pretending."

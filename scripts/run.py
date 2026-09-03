@@ -433,6 +433,14 @@ def mechanical_draft(cand, stake, use_v1=False, side="BUY"):
 
 def cmd_scan(args=()):
     use_v1 = "--v1" in args
+    # Session-start reconciliation reminder: a resting OCO may have fired
+    # between sessions. Scan cannot make authenticated MCP calls, so it
+    # prints the queries to run (same pattern as balance context).
+    import oco as ocomod
+    if ocomod.all_open_ocos():
+        print("!! RESTING OCOs ARE OPEN, reconcile before trusting positions:")
+        ocomod.cmd_reconcile_prepare([])
+        print()
     ctx, err = load_balance_ctx()
     if ctx is None:
         print(f"CANNOT SCAN: {err}.")

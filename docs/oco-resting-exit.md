@@ -50,15 +50,34 @@ before emission. The remaining gaps (list acceptance, exact balance) can
 only surface on the real placement, which is why the first live use is
 still a supervised, Pilot-confirmed act.
 
-## Deliberate reconciliation gap (out of scope by decision)
+## Reconciliation subsystem (built 2026-09-03, Pilot-approved)
 
-If the OCO FIRES between sessions, the exchange closes the position and this
-system does not learn of it automatically. Session-start reconciliation and
-partial-fill handling were deliberately NOT built, they are a real subsystem
-whose cost is not justified for a single supervised position on a 40 USDT
-demo account. Instead: if an OCO fires while away, the Pilot reconciles by
-hand from docs/oco-manual-runbook.md (query spot_myTrades, append the exit
-to fills.jsonl). This gap is known and accepted, not overlooked.
+The earlier version left session-start reconciliation out of scope. The
+Pilot then approved building it, because a silent divergence between
+fills.jsonl and the exchange is the worst gap in a product whose claim is an
+honest audit trail. It is now built (scripts/oco.py reconcile).
+
+At the start of every scan, run.py checks logs/resting_orders.jsonl for any
+open OCO and, if found, prints the queries to run (spot_getOpenOrders and
+spot_myTrades per symbol) because scan cannot make authenticated MCP calls
+itself. `oco.py reconcile <symbol> <openorders> <trades>` then classifies:
+target leg filled, stop leg filled, cancelled externally, still resting, or
+partially filled. Proven in PAPER on all five cases.
+
+- A detected close APPENDS a new fill to fills.jsonl with the real price,
+  quantity, fee and timestamp, flagged `reconciled: true`. It NEVER edits an
+  existing line: the record shows the exchange acted and we discovered it
+  after the fact, because that is what happened.
+- A reconciled close prints loudly at scan start with the symbol, which leg
+  fired, and the realised P&L, the first real P&L the system produces,
+  reported whether a win or a loss.
+- A partial fill logs what filled, reports the residual position, and says
+  so plainly rather than guessing.
+- run.py positions nets the reconciled close, so it never shows a phantom
+  position (proven: an open position went flat after reconciliation).
+- Cancelled-externally prints loudly that the position is UNPROTECTED.
+
+The manual runbook (docs/oco-manual-runbook.md) remains as a backup path.
 
 ## Exit-flow interaction
 

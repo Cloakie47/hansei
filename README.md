@@ -119,6 +119,22 @@ proven in paper mode first, and shipping an untestable write path violated
 our own methodology (docs/exit-protection-assessment.md has the full
 assessment). We state this rather than let you find it.
 
+## Resting protective exits
+
+After a live buy fill, the system places a real OCO on the exchange, a
+take-profit at the packet's target and a stop-loss at its stop, so the
+position exits at target or stop even with no Pilot present. This matters
+because Binance ships the order-list tools in the hidden write registry but
+their documented examples omit them, so an agent following the docs places
+an entry and leaves the position unguarded between sessions. Honest limits,
+stated: there is no test endpoint for order lists, so each leg is
+leg-tested separately (that catches tick, lot, notional and type, but not
+list acceptance), and the code refuses loudly if target is not above the
+last price and stop below it, rather than correcting silently. If an OCO
+fires between sessions, a session-start reconciliation queries the exchange,
+appends the real close to the audit log flagged as reconciled (never
+editing a line), and reports the realised P&L, win or loss.
+
 ## Publishing status
 
 The nightly Debrief has two outputs: the full self-review and a sub-150-word
