@@ -366,6 +366,15 @@ def cmd_exit(args):
         if not qty:
             print(f"no open LIVE position found for {symbol}; pass --qty/--opened for a drill")
             return 1
+    # A resting OCO locks the position quantity: it must be cancelled before
+    # a manual sell, or the sell is rejected for insufficient balance.
+    import oco as ocomod
+    resting = ocomod.open_oco_for(symbol)
+    if resting:
+        print(f"!! {symbol} has a RESTING OCO ({resting.get('client_id')}). Cancel it "
+              f"FIRST or the exit sell will be rejected for insufficient balance:")
+        print(f"   python scripts/oco.py cancel {symbol}")
+        print("   (place the cancel, record it, THEN proceed with this exit)\n")
     draft = exit_draft(symbol, qty, opened or "unknown", reason)
     ctx, err = load_balance_ctx()
     pid, text, checks = propose.build_packet(draft, {}, ctx or {"spot_account": {"balances": []}})
