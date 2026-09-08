@@ -6,3 +6,8 @@
 credentials*
 secrets*
 __pycache__/
+
+# Transient balance-refresh MCP dumps (regenerated before every scan/record)
+spot.json
+wallet.json
+deposits.json

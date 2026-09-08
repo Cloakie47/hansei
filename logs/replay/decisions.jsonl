@@ -2,3 +2,10 @@
 {"ts": "2026-09-02T19:44:16Z","replay": true,"rid": "r-s30d7-03","sid": "s30d7","symbol": "ENAUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
 {"ts": "2026-09-02T19:45:03Z","replay": true,"rid": "r-s45d11-01","sid": "s45d11","symbol": "LTCUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
 {"ts": "2026-09-02T19:45:28Z","replay": true,"rid": "r-s45d11-02","sid": "s45d11","symbol": "TRUMPUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
+{"ts": "2026-09-08T04:56:40Z","replay": true,"rid": "r-mix91-06","sid": "mix91","symbol": "TRUMPUSDT","confidence": 0.57,"verdict": "REJECTED","reject_reason": "CONVICTION"}
+{"ts": "2026-09-08T05:00:31Z","replay": true,"rid": "r-mix91-01","sid": "mix91","symbol": "UNIUSDT","confidence": 0.57,"verdict": "REJECTED","reject_reason": "CONVICTION"}
+{"ts": "2026-09-08T05:01:04Z","replay": true,"rid": "r-mix91-03","sid": "mix91","symbol": "TUSDT","confidence": 0.589,"verdict": "REJECTED","reject_reason": "CONVICTION"}
+{"ts": "2026-09-08T05:01:17Z","replay": true,"rid": "r-mix91-04","sid": "mix91","symbol": "BTCUSDT","confidence": 0.589,"verdict": "REJECTED","reject_reason": "CONVICTION"}
+{"ts": "2026-09-08T05:01:38Z","replay": true,"rid": "r-mix91-02","sid": "mix91","symbol": "BMTUSDT","confidence": 0.662,"verdict": "REJECTED","reject_reason": "CONVICTION"}
+{"ts": "2026-09-08T05:02:21Z","replay": true,"rid": "r-mix91-05","sid": "mix91","symbol": "TRUMPUSDT","confidence": 0.618,"verdict": "APPROVED","reject_reason": null}
+{"ts": "2026-09-08T05:03:08Z","replay": true,"rid": "r-s30d7-01","sid": "s30d7","symbol": "ADAUSDT","confidence": 0.62,"verdict": "APPROVED","reject_reason": null}
