@@ -394,7 +394,7 @@ def cmd_mixed(args):
 def _load_sessions():
     out = {}
     if SESSIONS.exists():
-        for p in SESSIONS.glob("s*.json"):
+        for p in SESSIONS.glob("*.json"):
             s = json.loads(p.read_text(encoding="utf-8"))
             out[s["sid"]] = s
     return out
